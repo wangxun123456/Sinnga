@@ -15,8 +15,8 @@ from collections import defaultdict
 
 # Avoid wildcard * imports if possible
 from test_framework.blocktools import (create_block, create_coinbase)
-from test_framework.messages import CInv
 from test_framework.mininode import (
+    CInv,
     P2PInterface,
     mininode_lock,
     msg_block,
@@ -76,7 +76,7 @@ class ExampleTest(BitcoinTestFramework):
     def set_test_params(self):
         """Override test parameters for your individual test.
 
-        This method must be overridden and num_nodes must be explicitly set."""
+        This method must be overridden and num_nodes must be exlicitly set."""
         self.setup_clean_chain = True
         self.num_nodes = 3
         # Use self.extra_args to change command-line arguments for the nodes

@@ -244,9 +244,8 @@ bool StartHTTPRPC()
     // ifdef can be removed once we switch to better endpoint support and API versioning
     RegisterHTTPHandler("/wallet/", false, HTTPReq_JSONRPC);
 #endif
-    struct event_base* eventBase = EventBase();
-    assert(eventBase);
-    httpRPCTimerInterface = MakeUnique<HTTPRPCTimerInterface>(eventBase);
+    assert(EventBase());
+    httpRPCTimerInterface = MakeUnique<HTTPRPCTimerInterface>(EventBase());
     RPCSetTimerInterface(httpRPCTimerInterface.get());
     return true;
 }
