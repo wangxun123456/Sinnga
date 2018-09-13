@@ -116,3 +116,8 @@ test/cache/*
 
 libbitcoinconsensus.pc
 contrib/devtools/split-debug.sh
+
+GPATH
+GRTAGS
+GTAGS
+install.sh
