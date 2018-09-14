@@ -107,8 +107,20 @@ public:
     /** Best header has changed */
     boost::signals2::signal<void (bool, const CBlockIndex *)> NotifyHeaderTip;
 
-    /** Banlist did change. */
-    boost::signals2::signal<void (void)> BannedListChanged;
+	/** Banlist did change. */
+	boost::signals2::signal<void (void)> BannedListChanged;
+
+	/** Omni balances have been updated. */
+    boost::signals2::signal<void ()> OmniBalanceChanged;
+
+	/** Omni state has been changed. */
+	boost::signals2::signal<void ()> OmniStateChanged;
+
+    /** Omni pending status has been changed */
+	boost::signals2::signal<void (bool pending)> OmniPendingChanged;
+
+    /** Omni state has been invalidated due to a reorg */
+	boost::signals2::signal<void ()> OmniStateInvalidated;
 };
 
 /** Show warning message **/

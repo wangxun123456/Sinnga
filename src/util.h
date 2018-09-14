@@ -186,6 +186,16 @@ public:
      */
     std::vector<std::string> GetArgs(const std::string& strArg) const;
 
+	/**
+	 * 
+	 */
+	bool AppendArgs(const std::string& strArg, const std::string& strValue);
+
+	/**
+	 *
+	 */
+	bool RemoveArgs(const std::string& strArg); 
+
     /**
      * Return true if the given argument has been manually set
      *

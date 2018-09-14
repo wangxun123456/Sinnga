@@ -599,3 +599,6 @@ endif
 if ENABLE_QT_TESTS
 include Makefile.qttest.include
 endif
+
+#omni
+include Makefile.omnicore.include    

@@ -57,6 +57,17 @@
 /**
  * Global state
  */
+/*
+extern int mastercore_handler_disc_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
+extern int mastercore_handler_disc_end(int nBlockNow, CBlockIndex const * pBlockIndex);
+extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex * pBlockIndex);
+extern int mastercore_handler_block_end(int nBlockNow, CBlockIndex const * pBlockIndex, unsigned int);  
+extern bool mastercore_handler_tx(const CTransaction& tx, int nBlock, unsigned int idx, const CBlockIndex* pBlockIndex);
+*/
+int GetHeight() {
+	LogPrint(BCLog::BENCH, "Get Fix Height = 1");
+	return 1;
+}
 namespace {
     struct CBlockIndexWorkComparator
     {
@@ -1521,7 +1532,7 @@ static bool UndoReadFromDisk(CBlockUndo& blockundo, const CBlockIndex *pindex)
 }
 
 /** Abort with a message */
-static bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
+bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
 {
     SetMiscWarning(strMessage);
     LogPrintf("*** %s\n", strMessage);
@@ -1532,7 +1543,7 @@ static bool AbortNode(const std::string& strMessage, const std::string& userMess
     return false;
 }
 
-static bool AbortNode(CValidationState& state, const std::string& strMessage, const std::string& userMessage="")
+bool AbortNode(CValidationState& state, const std::string& strMessage, const std::string& userMessage="")
 {
     AbortNode(strMessage, userMessage);
     return state.Error(strMessage);
@@ -2462,18 +2473,36 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
         return false;
     int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
     LogPrint(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime5 - nTime4) * MILLI, nTimeChainState * MICRO, nTimeChainState * MILLI / nBlocksTotal);
+
+
+	//! Omni Core: transaction position within the block
+	unsigned int nTxIdx = 0;
+	//! Omni Core: number of meta transactions found
+	unsigned int nNumMetaTxs = 0;
+
+	/*
+    //! Omni Core: begin block connect notification
+	LogPrintf("handler", "Omni Core handler: block connect begin [height: %d]\n", GetHeight()); 
+	mastercore_handler_block_begin(GetHeight(), pindexNew);
+
+*/
     // Remove conflicting transactions from the mempool.;
     mempool.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
     disconnectpool.removeForBlock(blockConnecting.vtx);
     // Update chainActive & related variables.
     chainActive.SetTip(pindexNew);
     UpdateTip(pindexNew, chainparams);
-
+/*
+	//! Omni Core: end of block connect notification
+	LogPrint(BCLog::BENCH, "handler", "Omni Core handler: block connect end [new height: %d, found: %u txs]\n", GetHeight(), nNumMetaTxs);
+	mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
+*/
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime5) * MILLI, nTimePostConnect * MICRO, nTimePostConnect * MILLI / nBlocksTotal);
     LogPrint(BCLog::BENCH, "- Connect block: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime1) * MILLI, nTimeTotal * MICRO, nTimeTotal * MILLI / nBlocksTotal);
 
     connectTrace.BlockConnected(pindexNew, std::move(pthisBlock));
+
     return true;
 }
 
