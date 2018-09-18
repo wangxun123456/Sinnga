@@ -12,10 +12,9 @@
 #include <stdint.h>
 #include <string>
 
+	extern  CChain& chainActive;
 namespace mastercore
 {
-	extern  CChain& chainActive;
-	extern CCriticalSection cs_main; 
 
 /**
  * @return The current chain length.

@@ -1432,6 +1432,7 @@ public:
         uiInterface.InitMessage(strProgressUI);
     }
 };
+int mastercore_handler_block_end(int nBlockNow, CBlockIndex * pBlockIndex, unsigned int countMP);
 
 /**
  * Scans the blockchain for meta transactions.
@@ -1896,8 +1897,7 @@ int mastercore_handler_block_begin(int nBlockPrev, CBlockIndex * pBlockIndex)
 // called once per block, after the block has been processed
 // TODO: consolidate into *handler_block_begin() << need to adjust Accept expiry check.............
 // it performs cleanup and other functions
-int mastercore_handler_block_end(int nBlockNow, CBlockIndex * pBlockIndex,
-        unsigned int countMP)
+int mastercore_handler_block_end(int nBlockNow, CBlockIndex * pBlockIndex, unsigned int countMP)
 {
     LOCK(cs_tally);
 

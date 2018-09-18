@@ -54,20 +54,14 @@
 #define MICRO 0.000001
 #define MILLI 0.001
 
-/**
- * Global state
- */
-/*
 extern int mastercore_handler_disc_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_disc_end(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex * pBlockIndex);
 extern int mastercore_handler_block_end(int nBlockNow, CBlockIndex const * pBlockIndex, unsigned int);  
 extern bool mastercore_handler_tx(const CTransaction& tx, int nBlock, unsigned int idx, const CBlockIndex* pBlockIndex);
-*/
-int GetHeight() {
-	LogPrint(BCLog::BENCH, "Get Fix Height = 1");
-	return 1;
-}
+/**
+ * Global state
+ */
 namespace {
     struct CBlockIndexWorkComparator
     {
@@ -219,6 +213,11 @@ private:
 
 
     bool RollforwardBlock(const CBlockIndex* pindex, CCoinsViewCache& inputs, const CChainParams& params) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    int GetHeight() {
+		LogPrint(BCLog::BENCH, "Get Fix Height = 1");
+		LOCK(cs_main);
+		return chainActive.Height();
+    }
 } g_chainstate;
 
 
@@ -1209,7 +1208,7 @@ bool IsInitialBlockDownload()
 
 CBlockIndex *pindexBestForkTip = nullptr, *pindexBestForkBase = nullptr;
 
-static void AlertNotify(const std::string& strMessage)
+void AlertNotify(const std::string& strMessage)
 {
     uiInterface.NotifyAlertChanged();
     std::string strCmd = gArgs.GetArg("-alertnotify", "");
@@ -2350,9 +2349,19 @@ bool CChainState::DisconnectTip(CValidationState& state, const CChainParams& cha
     chainActive.SetTip(pindexDelete->pprev);
 
     UpdateTip(pindexDelete->pprev, chainparams);
+
+	//! Omni Core: begin block disconnect notification
+	LogPrintf("handler", "Omni Core handler: block disconnect begin [height: %d, reindex: %d]\n", GetHeight(), (int)fReindex);
+//	mastercore_handler_disc_begin(GetHeight(), pindexDelete);
+
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
     GetMainSignals().BlockDisconnected(pblock);
+
+	//! Omni Core: end of block disconnect notification
+	LogPrintf("handler", "Omni Core handler: block disconnect end [height: %d, reindex: %d]\n", GetHeight(), (int)fReindex);
+//	mastercore_handler_disc_end(GetHeight(), pindexDelete);
+
     return true;
 }
 
@@ -2480,23 +2489,21 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
 	//! Omni Core: number of meta transactions found
 	unsigned int nNumMetaTxs = 0;
 
-	/*
     //! Omni Core: begin block connect notification
 	LogPrintf("handler", "Omni Core handler: block connect begin [height: %d]\n", GetHeight()); 
-	mastercore_handler_block_begin(GetHeight(), pindexNew);
+ 	//mastercore_handler_block_begin(GetHeight(), pindexNew);
 
-*/
     // Remove conflicting transactions from the mempool.;
     mempool.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
     disconnectpool.removeForBlock(blockConnecting.vtx);
     // Update chainActive & related variables.
     chainActive.SetTip(pindexNew);
     UpdateTip(pindexNew, chainparams);
-/*
+
 	//! Omni Core: end of block connect notification
 	LogPrint(BCLog::BENCH, "handler", "Omni Core handler: block connect end [new height: %d, found: %u txs]\n", GetHeight(), nNumMetaTxs);
-	mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
-*/
+	//mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
+
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime5) * MILLI, nTimePostConnect * MICRO, nTimePostConnect * MILLI / nBlocksTotal);
     LogPrint(BCLog::BENCH, "- Connect block: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime1) * MILLI, nTimeTotal * MICRO, nTimeTotal * MILLI / nBlocksTotal);

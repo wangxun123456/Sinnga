@@ -14,6 +14,7 @@
 
 #include <string>
 
+extern CTxMemPool mempool;
 namespace mastercore
 {
 //! Guards my_pending
@@ -22,7 +23,6 @@ CCriticalSection cs_pending;
 //! Global map of pending transaction objects
 PendingMap my_pending;
 
-extern CTxMemPool mempool;
 /**
  * Adds a transaction to the pending map using supplied parameters.
  */

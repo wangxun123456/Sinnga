@@ -14,21 +14,23 @@
 #include "sync.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
-
+#include "wallet/wallet.h"
 #include <univalue.h>
-
+#include "validation.h"
 #include <stdint.h>
 #include <stdexcept>
 #include <string>
 
-extern CCriticalSection cs_main;
+CWallet* pwalletMain;
 
 using mastercore::cs_tx_cache;
 using mastercore::view;
 
-
 UniValue omni_decodetransaction(const JSONRPCRequest& request)
 {
+	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
+
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 1 || params.size() > 3)
@@ -111,6 +113,8 @@ UniValue omni_decodetransaction(const JSONRPCRequest& request)
 
 UniValue omni_createrawtx_opreturn(const JSONRPCRequest& request)
 {
+	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 2)
@@ -148,6 +152,8 @@ UniValue omni_createrawtx_opreturn(const JSONRPCRequest& request)
 
 UniValue omni_createrawtx_multisig(const JSONRPCRequest& request)
 {
+    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 4)
@@ -174,6 +180,7 @@ UniValue omni_createrawtx_multisig(const JSONRPCRequest& request)
             + HelpExampleRpc("omni_createrawtx_multisig", "\"0100000001a7a9402ecd77f3c9f745793c9ec805bfa2e14b89877581c734c774864247e6f50400000000ffffffff01aa0a0000000000001976a9146d18edfe073d53f84dd491dae1379f8fb0dfe5d488ac00000000\", \"00000000000000020000000000989680\", \"1LifmeXYHeUe2qdKWBGVwfbUCMMrwYtoMm\", \"0252ce4bdd3ce38b4ebbc5a6e1343608230da508ff12d23d85b58c964204c4cef3\"")
         );
 
+
     CMutableTransaction tx = ParseMutableTransaction(params[0]);
     std::vector<unsigned char> payload = ParseHexV(params[1], "payload");
     std::string obfuscationSeed = ParseAddressOrEmpty(params[2]);
@@ -189,6 +196,8 @@ UniValue omni_createrawtx_multisig(const JSONRPCRequest& request)
 
 UniValue omni_createrawtx_input(const JSONRPCRequest& request)
 {
+    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 3)
@@ -226,6 +235,8 @@ UniValue omni_createrawtx_input(const JSONRPCRequest& request)
 
 UniValue omni_createrawtx_reference(const JSONRPCRequest& request)
 {
+    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -265,6 +276,8 @@ UniValue omni_createrawtx_reference(const JSONRPCRequest& request)
 
 UniValue omni_createrawtx_change(const JSONRPCRequest& request)
 {
+    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 4 || params.size() > 5)

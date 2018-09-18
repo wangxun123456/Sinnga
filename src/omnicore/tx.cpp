@@ -20,12 +20,14 @@
 #include "omnicore/utilsbitcoin.h"
 #include "omnicore/version.h"
 
+#include "shutdown.h"
+#include <warnings.h>
 #include "amount.h"
 #include "base58.h"
 #include "sync.h"
 #include "utiltime.h"
 #include "key_io.h"
-
+#include "ui_interface.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -42,7 +44,16 @@ using namespace mastercore;
 
 extern CCriticalSection cs_main; 
 extern  CChain& chainActive;
-extern bool AbortNode(const std::string& strMessage, const std::string& userMessage="");
+extern CClientUIInterface uiInterface;
+bool AbortNode(const std::string& strMessage, const std::string& userMessage = "")
+{
+	LogPrintf("*** %s\n", strMessage);
+    uiInterface.ThreadSafeMessageBox(
+		userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details") : userMessage,
+		"", CClientUIInterface::MSG_ERROR);
+      StartShutdown();
+	  return false;
+}
 extern void AlertNotify(const std::string& strMessage);
 
 /** Returns a label for the given transaction type. */

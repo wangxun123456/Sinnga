@@ -19,6 +19,7 @@
 #include "tinyformat.h"
 #include "txdb.h"
 #include "index/txindex.h"
+#include "validation.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
@@ -33,12 +34,9 @@
 #include <utility>
 #include <vector>
 
+	extern CChain& chainActive;
 namespace mastercore
 {
-	extern CWallet* pwallet; 
-	extern CChain& chainActive;
-	extern CCriticalSection cs_main; 
-	extern std::unique_ptr<TxIndex> g_txindex;  
 /**
  * Gets the byte offset of a transaction from the transaction index.
  */
@@ -58,15 +56,15 @@ std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, i
 {
     std::map<std::string, uint256> mapResponse;
 #ifdef ENABLE_WALLET
-    if (pwallet == NULL) {
+    if (pwalletMain == NULL) {
         return mapResponse;
     }
     std::set<uint256> seenHashes;
     std::list<CAccountingEntry> acentries;
     CWallet::TxItems txOrdered;
     {
-        LOCK(pwallet->cs_wallet);
-        txOrdered = pwallet->wtxOrdered;
+        LOCK(pwalletMain->cs_wallet);
+        txOrdered = pwalletMain->wtxOrdered;
     }
     // Iterate backwards through wallet transactions until we have count items to return:
     for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it) {
@@ -125,9 +123,9 @@ std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, i
         if (blockHeight < startBlock || blockHeight > endBlock) continue;
         int blockPosition = 0;
         {
-            LOCK(pwallet->cs_wallet);
-            std::map<uint256, CWalletTx>::const_iterator walletIt = pwallet->mapWallet.find(txHash);
-            if (walletIt != pwallet->mapWallet.end()) {
+            LOCK(pwalletMain->cs_wallet);
+            std::map<uint256, CWalletTx>::const_iterator walletIt = pwalletMain->mapWallet.find(txHash);
+            if (walletIt != pwalletMain->mapWallet.end()) {
                 const CWalletTx& wtx = walletIt->second;
                 blockPosition = wtx.nOrderPos;
             }

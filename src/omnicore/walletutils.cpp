@@ -30,14 +30,14 @@
 #include <map>
 #include <string>
 
+extern CWallet* pwalletMain; 
+unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
+extern CTxMemPool mempool;
+extern CBlockPolicyEstimator feeEstimator;
+extern CFeeRate minRelayTxFee;  
 namespace mastercore
 {
 
-	unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
-	extern CWallet* pwallet; 
-	extern CTxMemPool mempool;
-	extern CBlockPolicyEstimator feeEstimator;
-	extern CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);  
 /**
  * Retrieves a public key from the wallet, or converts a hex-string to a public key.
  */
@@ -45,9 +45,9 @@ bool AddressToPubKey(const std::string& key, CPubKey& pubKey)
 {
 #ifdef ENABLE_WALLET
     // Case 1: Bitcoin address and the key is in the wallet
-    if (pwallet && IsValidDestinationString(key)) {
+    if (pwalletMain && IsValidDestinationString(key)) {
         CKeyID keyID;
-        if (!pwallet->GetPubKey(keyID, pubKey)) {
+        if (!pwalletMain->GetPubKey(keyID, pubKey)) {
             PrintToLog("%s() ERROR: no public key in wallet for redemption address %s\n", __func__, key);
             return false;
         }
@@ -140,11 +140,11 @@ std::string GetAddressLabel(const std::string& address)
 {
     std::string addressLabel;
 #ifdef ENABLE_WALLET
-    if (pwallet) {
-        LOCK(pwallet->cs_wallet);
+    if (pwalletMain) {
+        LOCK(pwalletMain->cs_wallet);
 
-        std::map<CTxDestination, CAddressBookData>::const_iterator mi = pwallet->mapAddressBook.find(DecodeDestination(address));
-        if (mi != pwallet->mapAddressBook.end()) {
+        std::map<CTxDestination, CAddressBookData>::const_iterator mi = pwalletMain->mapAddressBook.find(DecodeDestination(address));
+        if (mi != pwalletMain->mapAddressBook.end()) {
             addressLabel = mi->second.name;
         }
     }
@@ -158,10 +158,10 @@ std::string GetAddressLabel(const std::string& address)
 int IsMyAddress(const std::string& address)
 {
 #ifdef ENABLE_WALLET
-    if (pwallet) {
+    if (pwalletMain) {
         // TODO: resolve deadlock caused cs_tally, cs_wallet
-        // LOCK(pwallet->cs_wallet);
-        isminetype isMine = IsMine(*pwallet, DecodeDestination(address));
+        // LOCK(pwalletMain->cs_wallet);
+        isminetype isMine = IsMine(*pwalletMain, DecodeDestination(address));
 
         return static_cast<int>(isMine);
     }
@@ -182,7 +182,7 @@ static int64_t GetEstimatedFeePerKb()
 	    FeeCalculation feeCalc; 
 
 		 CCoinControl coin_control;
-        nFee = GetMinimumFee(*pwallet, 1000, coin_control,  mempool, feeEstimator, &feeCalc);
+        nFee = GetMinimumFee(*pwalletMain, 1000, coin_control,  mempool, feeEstimator, &feeCalc);
 #endif
 
     return nFee;
@@ -218,7 +218,7 @@ int64_t SelectCoins(const std::string& fromAddress, CCoinControl& coinControl, i
     int64_t nTotal = 0;
 
 #ifdef ENABLE_WALLET
-    if (NULL == pwallet) {
+    if (NULL == pwalletMain) {
         return 0;
     }
 
@@ -229,10 +229,10 @@ int64_t SelectCoins(const std::string& fromAddress, CCoinControl& coinControl, i
     if (0 < additional) nMax += additional;
 
     int nHeight = GetHeight();
-    LOCK2(cs_main, pwallet->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // iterate over the wallet
-    for (std::map<uint256, CWalletTx>::const_iterator it = pwallet->mapWallet.begin(); it != pwallet->mapWallet.end(); ++it) {
+    for (std::map<uint256, CWalletTx>::const_iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it) {
         const uint256& txid = it->first;
         const CWalletTx& wtx = it->second;
 
@@ -250,13 +250,13 @@ int64_t SelectCoins(const std::string& fromAddress, CCoinControl& coinControl, i
             if (!CheckInput(txOut, nHeight, dest)) {
                 continue;
             }
-            if (!IsMine(*pwallet, dest)) {
+            if (!IsMine(*pwalletMain, dest)) {
                 continue;
             }
-            if (pwallet->IsSpent(txid, n)) {
+            if (pwalletMain->IsSpent(txid, n)) {
                 continue;
             }
-            if (pwallet->IsLockedCoin(txid, n)) {
+            if (pwalletMain->IsLockedCoin(txid, n)) {
                 continue;
             }
             if (txOut.nValue < GetEconomicThreshold(txOut)) {
@@ -297,15 +297,15 @@ int64_t SelectAllCoins(const std::string& fromAddress, CCoinControl& coinControl
     int64_t nTotal = 0;
 
 #ifdef ENABLE_WALLET
-    if (NULL == pwallet) {
+    if (NULL == pwalletMain) {
         return 0;
     }
 
     int nHeight = GetHeight();
-    LOCK2(cs_main, pwallet->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // iterate over the wallet
-    for (std::map<uint256, CWalletTx>::const_iterator it = pwallet->mapWallet.begin(); it != pwallet->mapWallet.end(); ++it) {
+    for (std::map<uint256, CWalletTx>::const_iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it) {
         const uint256& txid = it->first;
         const CWalletTx& wtx = it->second;
 
@@ -323,13 +323,13 @@ int64_t SelectAllCoins(const std::string& fromAddress, CCoinControl& coinControl
             if (!CheckInput(txOut, nHeight, dest)) {
                 continue;
             }
-            if (!IsMine(*pwallet, dest)) {
+            if (!IsMine(*pwalletMain, dest)) {
                 continue;
             }
-            if (pwallet->IsSpent(txid, n)) {
+            if (pwalletMain->IsSpent(txid, n)) {
                 continue;
             }
-            if (pwallet->IsLockedCoin(txid, n)) {
+            if (pwalletMain->IsLockedCoin(txid, n)) {
                 continue;
             }
 

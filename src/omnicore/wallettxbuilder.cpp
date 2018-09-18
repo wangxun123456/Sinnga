@@ -41,12 +41,11 @@ using mastercore::SelectAllCoins;
 using mastercore::SelectCoins;
 using mastercore::UseEncodingClassC;
 
-extern CWallet* pwallet; 
+extern CWallet* pwalletMain; 
 extern CCriticalSection cs_main; 
 extern CBlockPolicyEstimator feeEstimator;
-extern CTxMemPool mempool(&feeEstimator);
+extern CTxMemPool mempool;
 extern std::unique_ptr<CCoinsViewCache> pcoinsTip;
-extern void RelayTransaction(const CTransaction& tx, CConnman* connman);
 /** Creates and sends a transaction. */
 int WalletTxBuilder(
         const std::string& senderAddress,
@@ -59,7 +58,7 @@ int WalletTxBuilder(
         bool commit)
 {
 #ifdef ENABLE_WALLET
-    if (pwallet == NULL) return MP_ERR_WALLET_ACCESS;
+    if (pwalletMain == NULL) return MP_ERR_WALLET_ACCESS;
 
     // Determine the class to send the transaction via - default is Class C
     int omniTxClass = OMNI_CLASS_C;
@@ -72,7 +71,7 @@ int WalletTxBuilder(
     int nChangePosInOut = -1;
     std::string strFailReason;
     std::vector<std::pair<CScript, int64_t> > vecSend;
-    CReserveKey reserveKey(pwallet);
+    CReserveKey reserveKey(pwalletMain);
 
     // Next, we set the change address to the sender
     coinControl.destChange = DecodeDestination(senderAddress);
@@ -113,7 +112,7 @@ int WalletTxBuilder(
     }
 
     // Ask the wallet to create the transaction (note mining fee determined by Bitcoin Core params)
-    if (!pwallet->CreateTransaction(vecRecipients, txNew, reserveKey, nFeeRet, nChangePosInOut, strFailReason, coinControl)) {
+    if (!pwalletMain->CreateTransaction(vecRecipients, txNew, reserveKey, nFeeRet, nChangePosInOut, strFailReason, coinControl)) {
         PrintToLog("%s: ERROR: wallet transaction creation failed: %s\n", __func__, strFailReason);
         return MP_ERR_CREATE_TX;
     }
@@ -124,9 +123,9 @@ int WalletTxBuilder(
         return 0;
     } else {
 //jg 
-		auto it = pwallet->mapWallet.find(txNew->GetHash());
-		if (it == pwallet->mapWallet.end()) {
-			LogPrintf("not found wallet from mapWallet."); 
+		auto it = pwalletMain->mapWallet.find(txNew->GetHash());
+		if (it == pwalletMain->mapWallet.end()) {
+			LogPrintf("not found wallet from mapwalletMain."); 
 //			return MP_ERR_WALLET_ACCESS;
 		}
 /*	    CWalletTx& oldWtx = it->second;
@@ -138,7 +137,7 @@ int WalletTxBuilder(
 		mapValue_t mapValue;
         // Commit the transaction to the wallet and broadcast)
         PrintToLog("%s: %s; nFeeRet = %d\n", __func__, txNew->ToString(), nFeeRet);
-        if (!pwallet->CommitTransaction(txNew, mapValue, std::move(vOrderForm), senderAddress,  reserveKey, g_connman.get(), state)) return MP_ERR_COMMIT_TX;
+        if (!pwalletMain->CommitTransaction(txNew, mapValue, std::move(vOrderForm), senderAddress,  reserveKey, g_connman.get(), state)) return MP_ERR_COMMIT_TX;
         retTxid = txNew->GetHash();
         return 0;
     }
@@ -151,19 +150,19 @@ int WalletTxBuilder(
 #ifdef ENABLE_WALLET
 /** Locks all available coins that are not in the set of destinations. */
 static void LockUnrelatedCoins(
-        CWallet* pwallet,
+        CWallet* pwalletMain,
         const std::set<CTxDestination>& destinations,
         std::vector<COutPoint>& retLockedCoins)
 {
-    if (pwallet == NULL) {
+    if (pwalletMain == NULL) {
         return;
     }
 
-    // NOTE: require: LOCK2(cs_main, pwallet->cs_wallet);
+    // NOTE: require: LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // lock any other output
     std::vector<COutput> vCoins;
-    pwallet->AvailableCoins(vCoins, false, nullptr, true);
+    pwalletMain->AvailableCoins(vCoins, false, nullptr, true);
 
     for (COutput& output : vCoins) {
         CTxDestination address;
@@ -176,28 +175,36 @@ static void LockUnrelatedCoins(
         }
 
         COutPoint outpointLocked(output.tx->GetHash(), output.i);
-        pwallet->LockCoin(outpointLocked);
+        pwalletMain->LockCoin(outpointLocked);
         retLockedCoins.push_back(outpointLocked);
     }
 }
 
 /** Unlocks all coins, which were previously locked. */
 static void UnlockCoins(
-        CWallet* pwallet,
+        CWallet* pwalletMain,
         const std::vector<COutPoint>& vToUnlock)
 {
-    if (pwallet == NULL) {
+    if (pwalletMain == NULL) {
         return;
     }
 
-    // NOTE: require: LOCK2(cs_main, pwallet->cs_wallet);
+    // NOTE: require: LOCK2(cs_main, pwalletMain->cs_wallet);
 
     for (const COutPoint& output : vToUnlock) {
-        pwallet->UnlockCoin(output);
+        pwalletMain->UnlockCoin(output);
     }
 }
 #endif
 
+void RelayTransaction(const CTransaction& tx, CConnman* connman) 
+{
+	CInv inv(MSG_TX, tx.GetHash());
+    connman->ForEachNode([&inv](CNode* pnode)
+	{
+	    pnode->PushInventory(inv);
+	});
+}
 /**
  * Creates and sends a raw transaction by selecting all coins from the sender
  * and enough coins from a fee source. Change is sent to the fee source!
@@ -210,7 +217,7 @@ int CreateFundedTransaction(
         uint256& retTxid)
 {
 #ifdef ENABLE_WALLET
-    if (pwallet== NULL) {
+    if (pwalletMain== NULL) {
         return MP_ERR_WALLET_ACCESS;
     }
 
@@ -240,7 +247,7 @@ int CreateFundedTransaction(
 
     bool fSuccess = false;
 	CTransactionRef txNew;
-    CReserveKey reserveKey(pwallet);
+    CReserveKey reserveKey(pwalletMain);
     CAmount nFeeRequired = 0;
     std::string strFailReason;
     int nChangePosRet = 0; // add change first
@@ -259,13 +266,13 @@ int CreateFundedTransaction(
     std::set<CTxDestination> feeSources;
     feeSources.insert(DecodeDestination(feeAddress));
 
-    LOCK2(cs_main, pwallet->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     std::vector<COutPoint> vLockedCoins;
-    LockUnrelatedCoins(pwallet, feeSources, vLockedCoins);
+    LockUnrelatedCoins(pwalletMain, feeSources, vLockedCoins);
 
-    fSuccess = pwallet->CreateTransaction(vecRecipients, txNew, reserveKey, nFeeRequired, nChangePosRet, strFailReason, coinControl, false);
-//    if (!pwallet->CreateTransaction(vecRecipients,       txNew, reserveKey, nFeeRet, nChangePosInOut, strFailReason, coinControl)) {
+    fSuccess = pwalletMain->CreateTransaction(vecRecipients, txNew, reserveKey, nFeeRequired, nChangePosRet, strFailReason, coinControl, false);
+//    if (!pwalletMain->CreateTransaction(vecRecipients,       txNew, reserveKey, nFeeRet, nChangePosInOut, strFailReason, coinControl)) {
 
     // to restore the original order of inputs, create a new transaction and add
     // inputs and outputs step by step
@@ -292,12 +299,12 @@ int CreateFundedTransaction(
     }
 
     // restore original locking state
-    UnlockCoins(pwallet, vLockedCoins);
+    UnlockCoins(pwalletMain, vLockedCoins);
 
     // lock selected outputs for this transaction // TODO: could be removed?
     if (fSuccess) {
         for(const CTxIn& txIn : tx.vin) {
-            pwallet->LockCoin(txIn.prevout);
+            pwalletMain->LockCoin(txIn.prevout);
         }
     }
 
@@ -325,7 +332,7 @@ int CreateFundedTransaction(
     }
 
     int nHashType = SIGHASH_ALL;
-    const CKeyStore& keystore = *pwallet;
+    const CKeyStore& keystore = *pwalletMain;
 
     for (unsigned int i = 0; i < tx.vin.size(); i++) {
         CTxIn& txin = tx.vin[i];

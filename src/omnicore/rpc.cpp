@@ -64,7 +64,7 @@
 
 using std::runtime_error;
 using namespace mastercore;
-extern CWallet* pwallet;
+extern CWallet* pwalletMain;
 extern  CChain& chainActive;  
 extern CCriticalSection cs_main;  
 extern CTxMemPool mempool;
@@ -600,6 +600,9 @@ UniValue mscrpc(const JSONRPCRequest& request)
     int extra = 0;
     int extra2 = 0, extra3 = 0;
 
+	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
+
     if (request.fHelp || request.params.size() > 3)
         throw runtime_error(
             "mscrpc\n"
@@ -617,6 +620,7 @@ UniValue mscrpc(const JSONRPCRequest& request)
 
     PrintToConsole("%s(extra=%d,extra2=%d,extra3=%d)\n", __FUNCTION__, extra, extra2, extra3);
 
+	
     bool bDivisible = isPropertyDivisible(extra2);
 
     // various extra tests
@@ -720,7 +724,7 @@ UniValue mscrpc(const JSONRPCRequest& request)
         case 11:
         {
             PrintToConsole("Locking pwalletMain->cs_wallet for %d milliseconds..\n", extra2);
-            LOCK(pwallet->cs_wallet);
+            LOCK(pwalletMain->cs_wallet);
             MilliSleep(extra2);
             PrintToConsole("Unlocking pwalletMain->cs_wallet now\n");
             break;
@@ -919,11 +923,11 @@ static std::set<std::string> getWalletAddresses(bool fIncludeWatchOnly)
     std::set<std::string> result;
 
 #ifdef ENABLE_WALLET
-    LOCK(pwallet->cs_wallet);
+    LOCK(pwalletMain->cs_wallet);
 
-    for (const std::pair<CTxDestination, CAddressBookData>& item : pwallet->mapAddressBook) {
+    for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
         //const CBitcoinAddress& address = item.first; //jg
-        isminetype iIsMine = IsMine(*pwallet, item.first);
+        isminetype iIsMine = IsMine(*pwalletMain, item.first);
 
         if (iIsMine == ISMINE_SPENDABLE || (fIncludeWatchOnly && iIsMine != ISMINE_NO)) {
             result.insert(EncodeDestination(item.first));
@@ -937,6 +941,10 @@ static std::set<std::string> getWalletAddresses(bool fIncludeWatchOnly)
 UniValue omni_getwalletbalances(const JSONRPCRequest& request)
 {
     const UniValue &params = request.params;
+
+	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
+	 pwalletMain = walletMain.get();
+
     if (request.fHelp || request.params.size() > 1)
         throw runtime_error(
             "omni_getwalletbalances ( includewatchonly )\n"

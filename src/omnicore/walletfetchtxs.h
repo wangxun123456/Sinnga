@@ -5,7 +5,8 @@ class uint256;
 
 #include <map>
 #include <string>
-
+#include "wallet/wallet.h"
+extern CWallet* pwalletMain;
 namespace mastercore
 {
 /** Returns an ordered list of Omni transactions that are relevant to the wallet. */

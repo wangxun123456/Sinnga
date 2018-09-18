@@ -11,11 +11,11 @@ SetCompressor /SOLID lzma
 !define URL http://www.omnilayer.org/
 
 # MUI Symbol Definitions
-!define MUI_ICON "/home/root/work/codes/bitcoin-omni-17/share/pixmaps/bitcoin.ico"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "/home/root/work/codes/bitcoin-omni-17/share/pixmaps/nsis-wizard.bmp"
+!define MUI_ICON "/home/root/work/1850/share/pixmaps/bitcoin.ico"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "/home/root/work/1850/share/pixmaps/nsis-wizard.bmp"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
-!define MUI_HEADERIMAGE_BITMAP "/home/root/work/codes/bitcoin-omni-17/share/pixmaps/nsis-header.bmp"
+!define MUI_HEADERIMAGE_BITMAP "/home/root/work/1850/share/pixmaps/nsis-header.bmp"
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_REGISTRY_KEY ${REGKEY}
@@ -23,7 +23,7 @@ SetCompressor /SOLID lzma
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER "Bitcoin Core"
 !define MUI_FINISHPAGE_RUN $INSTDIR\omnicore-qt.exe
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "/home/root/work/codes/bitcoin-omni-17/share/pixmaps/nsis-wizard.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "/home/root/work/1850/share/pixmaps/nsis-wizard.bmp"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 # Included files
@@ -49,7 +49,7 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile /home/root/work/codes/bitcoin-omni-17/omnicore-${VERSION}-win-setup.exe
+OutFile /home/root/work/1850/omnicore-${VERSION}-win-setup.exe
 !if "" == "64"
 InstallDir "$PROGRAMFILES64\Omni Core"
 !else
@@ -74,15 +74,15 @@ ShowUninstDetails show
 Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
-    File /home/root/work/codes/bitcoin-omni-17/release/omnicore-qt.exe
-    File /oname=copying.txt /home/root/work/codes/bitcoin-omni-17/src/omnicore/COPYING.md
-    File /oname=readme.txt /home/root/work/codes/bitcoin-omni-17/src/omnicore/README.md
-    File /oname=release-notes.txt /home/root/work/codes/bitcoin-omni-17/src/omnicore/doc/release-notes.md
+    File /home/root/work/1850/release/omnicore-qt.exe
+    File /oname=copying.txt /home/root/work/1850/src/omnicore/COPYING.md
+    File /oname=readme.txt /home/root/work/1850/src/omnicore/README.md
+    File /oname=release-notes.txt /home/root/work/1850/src/omnicore/doc/release-notes.md
     SetOutPath $INSTDIR\daemon
-    File /home/root/work/codes/bitcoin-omni-17/release/omnicored.exe
-    File /home/root/work/codes/bitcoin-omni-17/release/omnicore-cli.exe
+    File /home/root/work/1850/release/omnicored.exe
+    File /home/root/work/1850/release/omnicore-cli.exe
     SetOutPath $INSTDIR\doc
-    File /r /home/root/work/codes/bitcoin-omni-17/src/omnicore/doc\*.*
+    File /r /home/root/work/1850/src/omnicore/doc\*.*
     SetOutPath $INSTDIR
     WriteRegStr HKCU "${REGKEY}\Components" Main 1
 

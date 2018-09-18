@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+extern bool AbortNode(const std::string& strMessage, const std::string& userMessage="");
+extern bool AbortNode(CValidationState& state, const std::string& strMessage, const std::string& userMessage="");
 namespace mastercore
 {
 //! Pending activations
@@ -76,8 +78,6 @@ void AddPendingActivation(uint16_t featureId, int activationBlock, uint32_t minC
     uiInterface.OmniStateChanged();
 }
 
-extern bool AbortNode(const std::string& strMessage, const std::string& userMessage="");
-extern bool AbortNode(CValidationState& state, const std::string& strMessage, const std::string& userMessage="");
 /**
  * Checks if any activations went live in the block.
  */
