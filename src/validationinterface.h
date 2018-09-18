@@ -22,6 +22,7 @@ class CValidationState;
 class uint256;
 class CScheduler;
 class CTxMemPool;
+class CBlockConfirm;
 enum class MemPoolRemovalReason;
 
 // These functions dispatch to one or all registered wallets
@@ -144,7 +145,9 @@ protected:
     /**
      * Notifies listeners that a block which builds directly on our current tip
      * has been received and connected to the headers tree, though not validated yet */
-    virtual void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& block) {};
+    virtual void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& block) {}
+    virtual void RelayConfirm(const std::shared_ptr<const CBlockConfirm> &confirm){}
+
     friend void ::RegisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterAllValidationInterfaces();
@@ -185,6 +188,8 @@ public:
     void Broadcast(int64_t nBestBlockTime, CConnman* connman);
     void BlockChecked(const CBlock&, const CValidationState&);
     void NewPoWValidBlock(const CBlockIndex *, const std::shared_ptr<const CBlock>&);
+    void RelayConfirm(const std::shared_ptr<const CBlockConfirm> &confirm);
+
 };
 
 CMainSignals& GetMainSignals();
