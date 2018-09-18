@@ -142,6 +142,10 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
 //        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr))
         if(!ProcessNewBlockBft(Params(),shared_pblock,true,nullptr))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+
+        CValidationState state; // Only used to report errors, not invalidity - ignore it
+        if (!ActivateBestChain(state, Params(), shared_pblock))
+            return error("%s: ActivateBestChain failed (%s)", __func__, FormatStateMessage(state));
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
 
@@ -150,6 +154,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
         {
             coinbaseScript->KeepScript();
         }
+
     }
     return blockHashes;
 }
@@ -185,7 +190,7 @@ static UniValue generatetoaddress(const JSONRPCRequest& request)
     std::shared_ptr<CReserveScript> coinbaseScript = std::make_shared<CReserveScript>();
     coinbaseScript->reserveScript = GetScriptForDestination(destination);
 
-    return generateBlocks(coinbaseScript, nGenerate, nMaxTries, false);
+     return generateBlocks(coinbaseScript, nGenerate, nMaxTries, false);
 }
 
 static UniValue getmininginfo(const JSONRPCRequest& request)

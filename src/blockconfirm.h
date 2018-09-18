@@ -27,7 +27,7 @@ public:
     void SetId(const WitnessId & id){m_witnessId = id;}
     bool Confirm()const {return m_confirm;}
     void SetConfirm(bool confirm){m_confirm = confirm;}
-    uint32_t Height() const {return m_height;}
+    int Height() const {return m_height;}
     void SetHeight(uint32_t height){m_height = height;}
 
     ADD_SERIALIZE_METHODS;
@@ -39,7 +39,15 @@ public:
         READWRITE(m_height);
         READWRITE(m_confirm);
     }
-    friend bool operator<(const CBlockConfirm & a, const CBlockConfirm& b){return a.m_witnessId < b.m_witnessId;}
+    friend bool operator<(const CBlockConfirm & a, const CBlockConfirm& b)
+    {
+        if (a.m_witnessId < b.m_witnessId)
+            return true;
+        else if(a.m_witnessId == b.m_witnessId)
+        {
+            return a.m_hashBlock < b.m_hashBlock;
+        }
+    }
 
 private:
     uint256 m_hashBlock;

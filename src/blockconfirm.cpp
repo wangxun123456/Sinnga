@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 
-#define WITNESSCOUNT   1
+#define WITNESSCOUNT   3
 namespace  {
 
 typedef uint64_t AccountName;
@@ -50,21 +50,7 @@ static bool IsBadBlockConfirm(const CBlockConfirm &confirm)
 {
     return setBadBlock.find(confirm.Hash()) != setBadBlock.end();
 }
-static void AddConfirmToNode(const NodeId &id,const WitnessId & witnessId)
-{
-    auto setWitness = mapNodeHaveConfirm.find(id);
-    if(setWitness != mapNodeHaveConfirm.end())
-    {
-        mapNodeHaveConfirm[id].insert(witnessId);
-    }
-    else
-    {
-        std::set<WitnessId> setWitness;
-        setWitness.insert(witnessId);
-        std::pair<NodeId,std::set<WitnessId>> p(id,setWitness);
-        mapNodeHaveConfirm.insert(p);
-    }
-}
+
 bool NodeHaveConfirm(const NodeId &id,const WitnessId &witnessId)
 {
     const auto &setWitness = mapNodeHaveConfirm.find(id);
@@ -74,9 +60,24 @@ bool NodeHaveConfirm(const NodeId &id,const WitnessId &witnessId)
     }
     return false;
 }
-static void AddConfirm(const CBlockConfirm &confirm)
+static void AddConfirm(const CBlockConfirm &confirm,const CNode *node = nullptr)
 {
-    setBlockConfirm.insert(confirm);
+    if(node)
+    {
+        NodeId id = node->GetId();
+        WitnessId witnessId = confirm.Id();
+        auto setWitness = mapNodeHaveConfirm.find(id);
+        if(setWitness != mapNodeHaveConfirm.end())
+            mapNodeHaveConfirm[id].insert(witnessId);
+        else
+            mapNodeHaveConfirm.insert(std::make_pair(id,std::set<WitnessId>{witnessId}));
+    }
+    if(setBlockConfirm.insert(confirm).second)
+    {
+        //insert + 1
+        agreedConfirmNum += confirm.Confirm();
+        disagreedConfirmNum += !confirm.Confirm();
+    }
 }
 static bool HaveConfirm(const CBlockConfirm &confirm)
 {
@@ -94,33 +95,31 @@ static bool AcceptConfirm(const std::shared_ptr<const CBlockConfirm> &confirm,co
         return false;
     //is bad block
     if(IsBadBlockConfirm(*confirm))
+    {
         return false;
+    }
     //is last height
     if(confirm->Height() != pblock->nHeight + 1)
+    {
         return false;
+    }
     //at Schedule
     if(!IsInSchedule(*confirm))
         return false;
     //already recv
     if(HaveConfirm(*confirm))
+    {
         return false;
-    //insert + 1
-    agreedConfirmNum += confirm->Confirm();
-    disagreedConfirmNum += !confirm->Confirm();
-    setBlockConfirm.insert(*confirm);
+    }
+    AddConfirm(*confirm);
     return true;
 }
 
 static bool RelayConfirm(const std::shared_ptr<const CBlockConfirm> &confirm,const CNode *node = nullptr)
 {
-    if(node == nullptr)
-    {
-        AddConfirm(*confirm);
-    }
-    else
-    {
-        AddConfirmToNode(node->GetId(),confirm->Id());
-    }
+    //local
+    AddConfirm(*confirm,node);
+
     GetMainSignals().RelayConfirm(confirm);
     //signal slot
     return true;
@@ -138,15 +137,19 @@ static bool ReleaseConfirm()
 static bool UpdateChain()
 {
     if(!currentBlock)
+    {
         return false;
+    }
+    //height()
     int n = witnessCount / 3;
+    printf("setBlockConfirm.size = %d\n",setBlockConfirm.size());
+    printf("agreedConfirmNum = %d\n",agreedConfirmNum);
     if(agreedConfirmNum > 2*n)
     {
         ReleaseConfirm();
         CValidationState state; // Only used to report errors, not invalidity - ignore it
         if (!ActivateBestChain(state,Params(),currentBlock))
             return error("%s: ActivateBestChain failed (%s)", __func__, FormatStateMessage(state));
-        return true;
     }
     if(disagreedConfirmNum > n)
     {
@@ -159,8 +162,6 @@ static bool UpdateChain()
 static bool SetBlock(std::shared_ptr<const CBlock> block)
 {
     //already have
-    if(currentBlock)
-        return false;
     currentBlock = block;
     uint256 blockHash = block->GetHash();
     //check confirm
@@ -179,12 +180,24 @@ static bool SetBlock(std::shared_ptr<const CBlock> block)
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
 bool ProcessConfirm(const std::shared_ptr<const CBlockConfirm> &confirm,const CNode *node)
 {
-    printf("get message fromr port %d\n",confirm->Id());
     //check
     if(!AcceptConfirm(confirm,node))
+    {
         return false;
+    }
     //relay
     if(!RelayConfirm(confirm,node))
         return false;
@@ -202,8 +215,6 @@ bool ProcessNewBlockBft(const CChainParams& chainparams, const std::shared_ptr<c
         return false;
     }
     //keep block
-    if(currentBlock)
-        currentBlock = std::make_shared<CBlock>();
     SetBlock(pblock);
     //sendconfirm
     std::shared_ptr<CBlockConfirm> confirm = std::make_shared<CBlockConfirm>(pblock->GetHash(),gArgs.GetArg("-port",200),chainActive.Height()+1,true);

@@ -2669,6 +2669,9 @@ bool CChainState::ActivateBestChain(CValidationState &state, const CChainParams&
     // far from a guarantee. Things in the P2P/RPC will often end up calling
     // us in the middle of ProcessNewBlock - do not assume pblock is set
     // sanely for performance or correctness!
+
+
+    printf("in ActivateBestChain...........\n");
     AssertLockNotHeld(cs_main);
 
     // ABC maintains a fair degree of expensive-to-calculate internal state
@@ -3465,6 +3468,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
 
     if (!AcceptBlockHeader(block, state, chainparams, &pindex))
         return false;
+    //pindex status = have tree
 
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
@@ -3506,7 +3510,6 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
         }
         return error("%s: %s", __func__, FormatStateMessage(state));
     }
-
     // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
     // (but if it does not build on our best tip, let the SendMessages loop relay it)
     if (!IsInitialBlockDownload() && chainActive.Tip() == pindex->pprev)
@@ -3526,7 +3529,6 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
     }
 
     FlushStateToDisk(chainparams, state, FlushStateMode::NONE);
-
     CheckBlockIndex(chainparams.GetConsensus());
 
     return true;
@@ -3549,6 +3551,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
         if (ret) {
             // Store to disk
             ret = g_chainstate.AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+
         }
         if (!ret) {
             GetMainSignals().BlockChecked(*pblock, state);

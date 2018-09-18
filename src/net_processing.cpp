@@ -937,6 +937,7 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
         CNodeState &state = *State(pnode->GetId());
         // If the peer has, or we announced to them the previous block already,
         // but we don't think they have this one, go ahead and announce it
+
         if (state.fPreferHeaderAndIDs && (!fWitnessEnabled || state.fWantsCmpctWitness) &&
                 !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev)) {
 
@@ -949,17 +950,15 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
 }
 void PeerLogicValidation::RelayConfirm(const std::shared_ptr<const CBlockConfirm> &confirm)
 {
-    printf("int RelayConfirm ...........\n");
-    const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
+    LOCK(cs_main);
 
-    printf("confirm->Height() = %d chainActiveheight = %d\n",confirm->Height(),chainActive.Height());
+    const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
 
     if(confirm->Height() != chainActive.Height()+1)
     {
         return;
     }
     connman->ForEachNode([this, &confirm,&msgMaker](CNode* pnode) {
-        printf("node id = %d\n",pnode->GetId());
         if(!NodeHaveConfirm(pnode->GetId(),confirm->Id()))
             connman->PushMessage(pnode, msgMaker.Make(NetMsgType::BLOCKCONFIRM, *confirm));
     });
@@ -1612,6 +1611,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
     }
 
+    printf("recv cmd = %s\n",strCommand.c_str());
     if (strCommand == NetMsgType::REJECT)
     {
         if (LogAcceptCategory(BCLog::NET)) {
@@ -2608,6 +2608,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // we have a chain with at least nMinimumChainWork), and we ignore
             // compact blocks with less work than our tip, it is safe to treat
             // reconstructed compact blocks as having been requested.
+
             ProcessNewBlock(chainparams, pblock, /*fForceProcessing=*/true, &fNewBlock);
             if (fNewBlock) {
                 pfrom->nLastBlockTime = GetTime();
