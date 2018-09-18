@@ -20,7 +20,8 @@
 #include <memory>
 
 #include <boost/algorithm/string.hpp> // boost::trim
-
+#include "omnicore/rpcmbstring.h"
+static bool fSanitizeResponse = true;
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
 
@@ -192,6 +193,9 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
 
             // Send reply
             strReply = JSONRPCReply(result, NullUniValue, jreq.id);
+			if (fSanitizeResponse) {
+				strReply = mastercore::SanitizeInvalidUTF8(strReply);
+		    }
 
         // array of requests
         } else if (valRequest.isArray())
@@ -238,6 +242,8 @@ bool StartHTTPRPC()
     LogPrint(BCLog::RPC, "Starting HTTP RPC server\n");
     if (!InitRPCAuthentication())
         return false;
+	// Sanitize non-UTF8 compliant RPC responses
+	fSanitizeResponse = gArgs.GetBoolArg("-rpcforceutf8", true);
 
     RegisterHTTPHandler("/", true, HTTPReq_JSONRPC);
 #ifdef ENABLE_WALLET

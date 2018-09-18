@@ -20,6 +20,7 @@
 #include <httprpc.h>
 #include <utilstrencodings.h>
 #include <walletinitinterface.h>
+#include "omnicore/utilsui.h"
 
 #include <stdio.h>
 

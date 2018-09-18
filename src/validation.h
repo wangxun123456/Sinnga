@@ -45,7 +45,7 @@ struct ChainTxData;
 
 struct PrecomputedTransactionData;
 struct LockPoints;
-
+extern bool fTxIndex;
 /** Default for -whitelistrelay. */
 static const bool DEFAULT_WHITELISTRELAY = true;
 /** Default for -whitelistforcerelay. */

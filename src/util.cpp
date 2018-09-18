@@ -83,7 +83,8 @@ const int64_t nStartupTime = GetTime();
 
 const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
 const char * const BITCOIN_PID_FILENAME = "bitcoind.pid";
-
+/** Flag to indicate, whether the Omni Core log file should be reopened. */
+std::atomic<bool> fReopenOmniCoreLog(false);
 ArgsManager gArgs;
 
 CTranslationInterface translationInterface;

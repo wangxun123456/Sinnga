@@ -54,6 +54,7 @@
 #define MICRO 0.000001
 #define MILLI 0.001
 
+bool fTxIndex = false;
 extern int mastercore_handler_disc_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_disc_end(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex * pBlockIndex);
