@@ -955,11 +955,9 @@ void PeerLogicValidation::RelayConfirm(const std::shared_ptr<const CBlockConfirm
     const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
 
     if(confirm->Height() != chainActive.Height()+1)
-    {
         return;
-    }
     connman->ForEachNode([this, &confirm,&msgMaker](CNode* pnode) {
-        if(!NodeHaveConfirm(pnode->GetId(),confirm->Id()))
+        if(!NodeHaveConfirm(pnode->GetId(),*confirm))
             connman->PushMessage(pnode, msgMaker.Make(NetMsgType::BLOCKCONFIRM, *confirm));
     });
 }

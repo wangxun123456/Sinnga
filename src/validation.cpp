@@ -2671,7 +2671,6 @@ bool CChainState::ActivateBestChain(CValidationState &state, const CChainParams&
     // sanely for performance or correctness!
 
 
-    printf("in ActivateBestChain...........\n");
     AssertLockNotHeld(cs_main);
 
     // ABC maintains a fair degree of expensive-to-calculate internal state
