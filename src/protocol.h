@@ -95,6 +95,7 @@ extern const char *INV;
  * @see https://bitcoin.org/en/developer-reference#getdata
  */
 extern const char *GETDATA;
+
 /**
  * The merkleblock message is a reply to a getdata message which requested a
  * block using the inventory type MSG_MERKLEBLOCK.
@@ -120,6 +121,11 @@ extern const char *GETHEADERS;
  * @see https://bitcoin.org/en/developer-reference#tx
  */
 extern const char *TX;
+
+/**
+ * The vote message transmits a single vote transaction.
+ */
+extern const char *VOTE;
 /**
  * The headers message sends one or more block headers to a node which
  * previously requested certain headers with a getheaders message.
@@ -379,6 +385,7 @@ enum GetDataMsg
     MSG_WITNESS_BLOCK = MSG_BLOCK | MSG_WITNESS_FLAG, //!< Defined in BIP144
     MSG_WITNESS_TX = MSG_TX | MSG_WITNESS_FLAG,       //!< Defined in BIP144
     MSG_FILTERED_WITNESS_BLOCK = MSG_FILTERED_BLOCK | MSG_WITNESS_FLAG,
+    MSG_VOTE
 };
 
 /** inv message data */

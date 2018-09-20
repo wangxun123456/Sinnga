@@ -502,6 +502,70 @@ static CTransactionRef SendMoney(CWallet * const pwallet, const CTxDestination &
     return tx;
 }
 
+
+CTransactionRef SendVotes(uint256 &random,CWallet * const pwallet)
+{
+    if (pwallet->GetBroadcastTransactions() && !g_connman)
+    {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Peer-to-peer functionality missing or disabled");;
+    }
+
+    const std::map<CTxDestination, CAddressBookData>::iterator it=pwallet->mapAddressBook.begin();
+
+    //Public key hash is stored in scriptPubKey
+    auto keyid = GetKeyForDestination(*pwallet, it->first);
+    if(keyid.IsNull())
+        return nullptr;
+    CScript scriptPubKey;
+
+    std::vector<unsigned char> ckeyid=ToByteVector(keyid);
+    scriptPubKey<<ckeyid;
+
+    CKey key;
+    if (!pwallet->GetKey(keyid, key)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address is not known");
+    }
+
+    std::vector<unsigned char> vchSig;
+    if (!key.SignCompact(random, vchSig))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
+    ///////////////////////////////////////////////////////////
+
+    CScript scriptSig;
+    scriptSig<<vchSig;
+    vchSig.clear();
+
+    CScript::const_iterator pc = scriptSig.begin();
+    opcodetype opcode;
+    if (!scriptSig.GetOp(pc, opcode, vchSig))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "scriptSig get vchSig failed");
+
+//    CPubKey pubkey;
+//    if (!pubkey.RecoverCompact(*pindexBestHeader->phashBlock, vchSig))
+//        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
+
+//    if((pubkey.GetID() != keyid))
+//        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign right");
+
+
+    // Create and send the transaction
+    CReserveKey reservekey(pwallet);
+    std::string strError;
+    CTransactionRef tx;
+    if (!pwallet->CreateVoteTransaction(scriptPubKey,scriptSig, tx, reservekey, strError)) {
+        strError = strprintf("Error: Vote transaction create failed");
+        throw JSONRPCError(BCLog::ALL,strError);
+    }
+    CValidationState state;
+    mapValue_t mapValue;
+    if (!pwallet->CommitVoteTransaction(tx, std::move(mapValue), g_connman.get(), state)) {
+        strError = strprintf("Error: The transaction was rejected! Reason given: %s", FormatStateMessage(state));
+        throw JSONRPCError(RPC_WALLET_ERROR, strError);
+    }
+    return tx;
+}
+
+
 static UniValue sendtoaddress(const JSONRPCRequest& request)
 {
     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);

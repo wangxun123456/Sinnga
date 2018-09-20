@@ -32,6 +32,7 @@
 #include <rpc/server.h>
 #include <rpc/register.h>
 #include <rpc/blockchain.h>
+#include <rpc/mining.h>
 #include <script/standard.h>
 #include <script/sigcache.h>
 #include <scheduler.h>
@@ -1761,5 +1762,36 @@ bool AppInitMain()
 
     g_wallet_init_interface.Start(scheduler);
 
+    // Add by gold: mint vrf blocks in the background
+    MintStart(threadGroup);
+
     return true;
 }
+
+
+// minter thread
+void static ThreadMinter(void* parg)
+{
+    printf("ThreadMinter started\n");
+    try
+    {
+        ScheduleProductionLoop();
+    }
+    catch (boost::thread_interrupted) {
+        error("minter thread interrupt\n");
+    } catch (std::exception& e) {
+        error("%s ThreadMinter()", e.what());
+    } catch (...) {
+        error(NULL, "ThreadMinter()");
+    }
+    printf("ThreadMinter exiting\n");
+}
+
+
+// minter
+void MintStart(boost::thread_group& threadGroup)
+{
+    //  mint blocks in the background
+    threadGroup.create_thread(boost::bind(&ThreadMinter, nullptr));
+}
+

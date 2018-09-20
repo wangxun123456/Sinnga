@@ -67,4 +67,6 @@ void SetupServerArgs();
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 
+void MintStart(boost::thread_group& threadGroup);
+
 #endif // BITCOIN_INIT_H

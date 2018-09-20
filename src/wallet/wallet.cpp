@@ -1848,6 +1848,20 @@ bool CWalletTx::RelayWalletTransaction(CConnman* connman)
     return false;
 }
 
+bool CWalletTx::RelayWalletVoteTransaction(CConnman* connman)
+{
+    pwallet->WalletLogPrintf("Relaying wtx vote %s\n", GetHash().ToString());
+    if (connman) {
+        CInv inv(MSG_VOTE, GetHash());
+        connman->ForEachNode([&inv](CNode* pnode)
+        {
+            pnode->PushInventory(inv);
+        });
+        return true;
+      }
+    return false;
+}
+
 std::set<uint256> CWalletTx::GetConflicts() const
 {
     std::set<uint256> result;
@@ -1894,7 +1908,7 @@ CAmount CWalletTx::GetDebit(const isminefilter& filter) const
 CAmount CWalletTx::GetCredit(const isminefilter& filter) const
 {
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
+    if (IsImmatureCoinBase())
         return 0;
 
     CAmount credit = 0;
@@ -1926,8 +1940,7 @@ CAmount CWalletTx::GetCredit(const isminefilter& filter) const
 
 CAmount CWalletTx::GetImmatureCredit(bool fUseCache) const
 {
-    if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
-    {
+    if (IsImmatureCoinBase() && IsInMainChain()) {
         if (fUseCache && fImmatureCreditCached)
             return nImmatureCreditCached;
         nImmatureCreditCached = pwallet->GetCredit(*tx, ISMINE_SPENDABLE);
@@ -1944,7 +1957,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache, const isminefilter& filter
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
+    if (IsImmatureCoinBase())
         return 0;
 
     CAmount* cache = nullptr;
@@ -1985,8 +1998,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache, const isminefilter& filter
 
 CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool fUseCache) const
 {
-    if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
-    {
+    if (IsImmatureCoinBase() && IsInMainChain()) {
         if (fUseCache && fImmatureWatchCreditCached)
             return nImmatureWatchCreditCached;
         nImmatureWatchCreditCached = pwallet->GetCredit(*tx, ISMINE_WATCH_ONLY);
@@ -2199,7 +2211,7 @@ CAmount CWallet::GetLegacyBalance(const isminefilter& filter, int minDepth, cons
     for (const auto& entry : mapWallet) {
         const CWalletTx& wtx = entry.second;
         const int depth = wtx.GetDepthInMainChain();
-        if (depth < 0 || !CheckFinalTx(*wtx.tx) || wtx.GetBlocksToMaturity() > 0) {
+        if (depth < 0 || !CheckFinalTx(*wtx.tx) || wtx.IsImmatureCoinBase()) {
             continue;
         }
 
@@ -2259,7 +2271,7 @@ void CWallet::AvailableCoins(std::vector<COutput> &vCoins, bool fOnlySafe, const
         if (!CheckFinalTx(*pcoin->tx))
             continue;
 
-        if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
+        if (pcoin->IsImmatureCoinBase())
             continue;
 
         int nDepth = pcoin->GetDepthInMainChain();
@@ -3053,6 +3065,44 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CTransac
     return true;
 }
 
+//Create an vote transaction
+bool CWallet::CreateVoteTransaction(const CScript& scriptPubKey,const CScript& scriptSig,CTransactionRef& tx, CReserveKey& reservekey,std::string& strFailReason)
+{
+    CMutableTransaction txNew;
+
+    CAmount nValue = 0;
+    LOCK2(cs_main, cs_wallet);
+    txNew.vin.clear();
+
+    CTxOut txout(nValue, scriptPubKey);
+
+    txNew.vout.push_back(txout);
+
+    reservekey.ReturnKey(); // Return any reserved key
+
+    // Fill in final vin
+    txNew.vin.clear();
+
+    const uint32_t nSequence = CTxIn::SEQUENCE_FINAL;
+
+    std::vector<unsigned char> txin_preout={1,0};
+    txin_preout.resize(32);
+    txNew.vin.push_back(CTxIn(COutPoint(uint256(txin_preout),0), CScript(), nSequence));
+
+    int nIn = 0;
+    SignatureData sigdata;
+    sigdata.scriptSig=scriptSig;
+    sigdata.complete=true;
+
+    UpdateInput(txNew.vin.at(nIn), sigdata);
+
+    // Return the constructed transaction data.
+    tx = MakeTransactionRef(std::move(txNew));
+
+    return true;
+}
+
+
 /**
  * Call after CreateTransaction unless you want to abort
  */
@@ -3099,6 +3149,31 @@ bool CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
             } else {
                 wtx.RelayWalletTransaction(connman);
             }
+        }
+    }
+    return true;
+}
+
+
+/**
+ * Call after CommitVoteTransaction unless you want to abort
+ */
+bool CWallet::CommitVoteTransaction(CTransactionRef tx, mapValue_t mapValue, CConnman* connman, CValidationState& state)
+{
+    {
+        LOCK2(cs_main, cs_wallet);
+
+        CWalletTx wtxNew(this, std::move(tx));
+        wtxNew.nTimeReceived=GetAdjustedTime();
+        wtxNew.mapValue = std::move(mapValue);
+        wtxNew.fTimeReceivedIsTxTime = true;
+        wtxNew.fFromMe = true;
+
+        CWalletTx& wtx = wtxNew;
+
+        if (fBroadcastTransactions)
+        {
+            wtx.RelayWalletVoteTransaction(connman);
         }
     }
     return true;
@@ -3528,7 +3603,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
             if (!pcoin->IsTrusted())
                 continue;
 
-            if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
+            if (pcoin->IsImmatureCoinBase())
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -4406,6 +4481,11 @@ int CMerkleTx::GetBlocksToMaturity() const
     return std::max(0, (COINBASE_MATURITY+1) - chain_depth);
 }
 
+bool CMerkleTx::IsImmatureCoinBase() const
+{
+    // note GetBlocksToMaturity is 0 for non-coinbase tx
+    return GetBlocksToMaturity() > 0;
+}
 
 bool CWalletTx::AcceptToMemoryPool(const CAmount& nAbsurdFee, CValidationState& state)
 {
