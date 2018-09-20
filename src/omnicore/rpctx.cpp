@@ -24,7 +24,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
-
+#include "wallet/rpcwallet.h"
 #include <univalue.h>
 
 #include <stdint.h>

@@ -38,6 +38,7 @@ FastRandomContext insecure_rand_ctx(insecure_rand_seed);
 
 extern bool fPrintToConsole;
 extern void noui_connect();
+extern int mastercore_shutdown();
 
 std::ostream& operator<<(std::ostream& os, const uint256& num)
 {
@@ -116,6 +117,7 @@ TestingSetup::~TestingSetup()
         threadGroup.join_all();
         GetMainSignals().FlushBackgroundCallbacks();
         GetMainSignals().UnregisterBackgroundSignalScheduler();
+		mastercore_shutdown();
         g_connman.reset();
         peerLogic.reset();
         UnloadBlockIndex();

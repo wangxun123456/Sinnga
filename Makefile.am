@@ -202,9 +202,6 @@ functional_test_filtered.info: functional_test.info
 test_bitcoin_coverage.info: baseline_filtered.info test_bitcoin_filtered.info
 	$(LCOV) -a $(LCOV_OPTS) baseline_filtered.info -a test_bitcoin_filtered.info -o $@
 
-total_coverage.info: test_bitcoin_filtered.info functional_test_filtered.info omnicore_test_filtered.info
-	$(LCOV) -a $(LCOV_OPTS) baseline_filtered.info -a test_bitcoin_filtered.info -a functional_test_filtered.info -a omnicore_test_filtered.info  -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
-
 omnicore_test.info: test_bitcoin_filtered.info
 	-@TIMEOUT=15 qa/pull-tester/omnicore-rpc-tests.sh
 	$(LCOV) -c -d $(abs_builddir)/src --t OmniCoreRPCTest -o $@
@@ -213,6 +210,9 @@ omnicore_test.info: test_bitcoin_filtered.info
 					
 omnicore_test_filtered.info: omnicore_test.info
 	$(LCOV) -r $< "/usr/include/*" -o $@
+
+total_coverage.info: test_bitcoin_filtered.info functional_test_filtered.info omnicore_test_filtered.info
+	$(LCOV) -a $(LCOV_OPTS) baseline_filtered.info -a test_bitcoin_filtered.info -a functional_test_filtered.info -a omnicore_test_filtered.info  -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
 
 test_bitcoin.coverage/.dirstamp:  test_bitcoin_coverage.info
 	$(GENHTML) -s $(LCOV_OPTS) $< -o $(@D)

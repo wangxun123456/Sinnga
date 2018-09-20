@@ -621,6 +621,7 @@ std::string ArgsManager::GetHelpMessage() const
 
     std::string usage = "";
     for (const auto& arg_map : m_available_args) {
+		LogPrintf("HelpMessage %d\n", static_cast<int>(arg_map.first));
         switch(arg_map.first) {
             case OptionsCategory::OPTIONS:
                 usage += HelpMessageGroup("Options:");
@@ -661,6 +662,9 @@ std::string ArgsManager::GetHelpMessage() const
             case OptionsCategory::REGISTER_COMMANDS:
                 usage += HelpMessageGroup("Register Commands:");
                 break;
+			case OptionsCategory::OMNI:
+				usage += HelpMessageGroup("Omni options:");
+				break;
             default:
                 break;
         }

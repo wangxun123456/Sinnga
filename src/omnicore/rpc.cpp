@@ -70,6 +70,7 @@ extern CCriticalSection cs_main;
 extern CTxMemPool mempool;
 extern bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
 extern bool GetTransaction(const uint256& hash, CTransactionRef& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool fAllowSlow, CBlockIndex* blockIndex);
+extern void LoadWalletMain(const JSONRPCRequest& request);
 /**
  * Throws a JSONRPCError, depending on error code.
  */
@@ -600,8 +601,7 @@ UniValue mscrpc(const JSONRPCRequest& request)
     int extra = 0;
     int extra2 = 0, extra3 = 0;
 
-	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	LoadWalletMain(request);
 
     if (request.fHelp || request.params.size() > 3)
         throw runtime_error(
@@ -942,8 +942,7 @@ UniValue omni_getwalletbalances(const JSONRPCRequest& request)
 {
     const UniValue &params = request.params;
 
-	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	LoadWalletMain(request);
 
     if (request.fHelp || request.params.size() > 1)
         throw runtime_error(

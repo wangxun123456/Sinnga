@@ -54,7 +54,6 @@
 #define MICRO 0.000001
 #define MILLI 0.001
 
-bool fTxIndex = false;
 extern int mastercore_handler_disc_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_disc_end(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex * pBlockIndex);
@@ -2353,7 +2352,7 @@ bool CChainState::DisconnectTip(CValidationState& state, const CChainParams& cha
 
 	//! Omni Core: begin block disconnect notification
 	LogPrintf("handler", "Omni Core handler: block disconnect begin [height: %d, reindex: %d]\n", GetHeight(), (int)fReindex);
-//	mastercore_handler_disc_begin(GetHeight(), pindexDelete);
+	mastercore_handler_disc_begin(GetHeight(), pindexDelete);
 
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
@@ -2361,7 +2360,7 @@ bool CChainState::DisconnectTip(CValidationState& state, const CChainParams& cha
 
 	//! Omni Core: end of block disconnect notification
 	LogPrintf("handler", "Omni Core handler: block disconnect end [height: %d, reindex: %d]\n", GetHeight(), (int)fReindex);
-//	mastercore_handler_disc_end(GetHeight(), pindexDelete);
+	mastercore_handler_disc_end(GetHeight(), pindexDelete);
 
     return true;
 }
@@ -2492,7 +2491,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
 
     //! Omni Core: begin block connect notification
 	LogPrintf("handler", "Omni Core handler: block connect begin [height: %d]\n", GetHeight()); 
- 	//mastercore_handler_block_begin(GetHeight(), pindexNew);
+    mastercore_handler_block_begin(GetHeight(), pindexNew);
 
     // Remove conflicting transactions from the mempool.;
     mempool.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
@@ -2503,7 +2502,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
 
 	//! Omni Core: end of block connect notification
 	LogPrint(BCLog::BENCH, "handler", "Omni Core handler: block connect end [new height: %d, found: %u txs]\n", GetHeight(), nNumMetaTxs);
-	//mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
+//	mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime5) * MILLI, nTimePostConnect * MICRO, nTimePostConnect * MILLI / nBlocksTotal);
