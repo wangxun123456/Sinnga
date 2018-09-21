@@ -9,7 +9,6 @@
 #include <net.h>
 #include <validationinterface.h>
 #include <consensus/params.h>
-#include <pubkey.h>
 
 /** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
 static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
@@ -17,54 +16,6 @@ static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
 static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;
 /** Default for BIP61 (sending reject messages) */
 static constexpr bool DEFAULT_ENABLE_BIP61 = true;
-
-class CVoteInfo
-{
-public:
-    uint256 hash;
-    CKeyID keyid;
-    std::vector<unsigned char> vchSig;//random value
-    CTransactionRef ptx;
-    CVoteInfo(uint256 hash,CTransactionRef ptx)
-    {
-        this->hash=hash;
-        this->ptx=ptx;
-        std::vector<unsigned char> vkey;
-        CScript::const_iterator pc = ptx->vout[0].scriptPubKey.begin();
-        opcodetype opcode;
-        if (!ptx->vout[0].scriptPubKey.GetOp(pc, opcode, vkey))
-        {
-            LogPrintf("Info: scriptPubKey get vkey failed");
-            ptx=nullptr;
-            return;
-        }
-        keyid=CKeyID(uint160(vkey));
-
-        pc = ptx->vin[0].scriptSig.begin();
-        if (! ptx->vin[0].scriptSig.GetOp(pc, opcode, vchSig))
-          {
-            LogPrintf("Info: scriptSig get vchSig failed");
-            ptx=nullptr;
-            return;
-          }
-    }
-
-public:
-    bool IsSignRight(uint256 seed) const
-    {
-      CPubKey pubkey;
-      if (!pubkey.RecoverCompact(seed, vchSig)){
-          LogPrintf("Info: Sign failed");
-          return false;
-        }
-      if((pubkey.GetID() != keyid)){
-          LogPrintf("Info: Sign failed");
-          return false;
-        }
-        return true;
-    }
-};
-
 
 class PeerLogicValidation final : public CValidationInterface, public NetEventsInterface {
 private:
@@ -110,7 +61,7 @@ public:
     bool SendMessages(CNode* pto) override EXCLUSIVE_LOCKS_REQUIRED(pto->cs_sendProcessing);
 
     /** Consider evicting an outbound peer based on the amount of time they've been behind our tip */
-    void ConsiderEviction(CNode *pto, int64_t time_in_seconds) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    void ConsiderEviction(CNode *pto, int64_t time_in_seconds);
     /** Evict extra outbound peers. If we think our tip may be stale, connect to an extra outbound */
     void CheckForStaleTipAndEvictPeers(const Consensus::Params &consensusParams);
     /** If we have extra outbound peers, try to disconnect the one with the oldest block announcement */
@@ -130,9 +81,7 @@ struct CNodeStateStats {
     std::vector<int> vHeightInFlight;
 };
 
-bool IsWitnessNodesSyncing();
-std::shared_ptr<const CVoteInfo> FindVoteInfo(uint256 hash);
-
 /** Get statistics from node state */
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
+
 #endif // BITCOIN_NET_PROCESSING_H

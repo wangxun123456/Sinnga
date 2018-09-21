@@ -18,7 +18,6 @@
 #include <key_io.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
-#include <policy/rbf.h>
 #include <primitives/transaction.h>
 #include <rpc/server.h>
 #include <script/descriptor.h>
@@ -380,8 +379,7 @@ static std::string EntryDescriptionString()
            "       ... ]\n"
            "    \"spentby\" : [           (array) unconfirmed transactions spending outputs from this transaction\n"
            "        \"transactionid\",    (string) child transaction id\n"
-           "       ... ]\n"
-           "    \"bip125-replaceable\" : true|false,  (boolean) Whether this transaction could be replaced due to BIP125 (replace-by-fee)\n";
+           "       ... ]\n";
 }
 
 static void entryToJSON(UniValue &info, const CTxMemPoolEntry &e) EXCLUSIVE_LOCKS_REQUIRED(::mempool.cs)
@@ -431,17 +429,6 @@ static void entryToJSON(UniValue &info, const CTxMemPoolEntry &e) EXCLUSIVE_LOCK
     }
 
     info.pushKV("spentby", spent);
-
-    // Add opt-in RBF status
-    bool rbfStatus = false;
-    RBFTransactionState rbfState = IsRBFOptIn(tx, mempool);
-    if (rbfState == RBFTransactionState::UNKNOWN) {
-        throw JSONRPCError(RPC_MISC_ERROR, "Transaction is not in mempool");
-    } else if (rbfState == RBFTransactionState::REPLACEABLE_BIP125) {
-        rbfStatus = true;
-    }
-
-    info.pushKV("bip125-replaceable", rbfStatus);
 }
 
 UniValue mempoolToJSON(bool fVerbose)
@@ -2058,7 +2045,7 @@ UniValue scantxoutset(const JSONRPCRequest& request)
             "or more path elements separated by \"/\", and optionally ending in \"/*\" (unhardened), or \"/*'\" or \"/*h\" (hardened) to specify all\n"
             "unhardened or hardened child keys.\n"
             "In the latter case, a range needs to be specified by below if different from 1000.\n"
-            "For more information on output descriptors, see the documentation at TODO\n"
+            "For more information on output descriptors, see the documentation in the doc/descriptors.md file.\n"
             "\nArguments:\n"
             "1. \"action\"                       (string, required) The action to execute\n"
             "                                      \"start\" for starting a scan\n"

@@ -24,7 +24,6 @@ const char *MERKLEBLOCK="merkleblock";
 const char *GETBLOCKS="getblocks";
 const char *GETHEADERS="getheaders";
 const char *TX="tx";
-const char *VOTE="vote";
 const char *HEADERS="headers";
 const char *BLOCK="block";
 const char *GETADDR="getaddr";
@@ -57,7 +56,6 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::GETBLOCKS,
     NetMsgType::GETHEADERS,
     NetMsgType::TX,
-    NetMsgType::VOTE,
     NetMsgType::HEADERS,
     NetMsgType::BLOCK,
     NetMsgType::GETADDR,
@@ -185,7 +183,6 @@ std::string CInv::GetCommand() const
     case MSG_BLOCK:          return cmd.append(NetMsgType::BLOCK);
     case MSG_FILTERED_BLOCK: return cmd.append(NetMsgType::MERKLEBLOCK);
     case MSG_CMPCT_BLOCK:    return cmd.append(NetMsgType::CMPCTBLOCK);
-    case MSG_VOTE:             return cmd.append(NetMsgType::VOTE);
     default:
         throw std::out_of_range(strprintf("CInv::GetCommand(): type=%d unknown type", type));
     }

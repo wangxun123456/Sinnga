@@ -558,7 +558,6 @@ public:
     double dPingTime;
     double dPingWait;
     double dMinPing;
-    CAmount minFeeFilter;
     // Our address, as reported by the peer
     std::string addrLocal;
     // Address of this peer
@@ -705,11 +704,6 @@ public:
     // and in the order requested.
     std::vector<uint256> vInventoryBlockToSend;
     CCriticalSection cs_inventory;
-
-    // inventory based relay
-    CRollingBloomFilter filterVoteInventoryKnown;
-    std::set<uint256> setVoteInventoryTxToSend;
-
     std::set<uint256> setAskFor;
     std::multimap<int64_t, CInv> mapAskFor;
     int64_t nNextInvSend;
@@ -832,14 +826,12 @@ public:
         }
     }
 
+
     void AddInventoryKnown(const CInv& inv)
     {
         {
             LOCK(cs_inventory);
-            if(inv.type == MSG_VOTE)
-                filterVoteInventoryKnown.insert(inv.hash);
-            else
-                filterInventoryKnown.insert(inv.hash);
+            filterInventoryKnown.insert(inv.hash);
         }
     }
 
@@ -852,9 +844,6 @@ public:
             }
         } else if (inv.type == MSG_BLOCK) {
             vInventoryBlockToSend.push_back(inv.hash);
-        } else if (inv.type == MSG_VOTE) {
-            setVoteInventoryTxToSend.insert(inv.hash);
-            filterVoteInventoryKnown.reset();
         }
     }
 

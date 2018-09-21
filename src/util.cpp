@@ -884,25 +884,6 @@ bool ArgsManager::ReadConfigStream(std::istream& stream, std::string& error, boo
     return true;
 }
 
-
-std::vector<std::string> vWitnessAddresses;
-
-void ReadWitnessAddress()
-{
-    fs::path absolute_path=GetConfigFile("address.conf");
-    fs::ifstream fin(absolute_path);
-    char line[1024]={0};
-    std::string tmp="";
-    while(fin.getline(line, sizeof(line)))
-    {
-        std::stringstream address(line);
-        address>>tmp;
-        vWitnessAddresses.push_back(tmp);
-    }
-    fin.clear();
-    fin.close();
-}
-
 bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
 {
     {
