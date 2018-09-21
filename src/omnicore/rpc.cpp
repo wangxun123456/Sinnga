@@ -53,6 +53,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
+#include "wallet/rpcwallet.h"
 
 #include <univalue.h>
 
@@ -64,7 +65,6 @@
 
 using std::runtime_error;
 using namespace mastercore;
-extern CWallet* pwalletMain;
 extern  CChain& chainActive;  
 extern CCriticalSection cs_main;  
 extern CTxMemPool mempool;

@@ -2,7 +2,7 @@
 #define OMNICORE_RPCRAWTX_H
 
 #include <univalue.h>
-class JSONRPCRequest; 
+#include "rpc/server.h" 
 
 UniValue omni_decodetransaction(const UniValue& params, bool fHelp);
 UniValue omni_createrawtx_opreturn(const UniValue& params, bool fHelp);

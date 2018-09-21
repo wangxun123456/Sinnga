@@ -154,7 +154,7 @@ int mastercore_shutdown();
 /** Block and transaction handlers. */
 extern int mastercore_handler_disc_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_disc_end(int nBlockNow, CBlockIndex const * pBlockIndex);
-extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex * pBlockIndex);
+extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_block_end(int nBlockNow, CBlockIndex const * pBlockIndex, unsigned int);
 extern bool mastercore_handler_tx(const CTransaction& tx, int nBlock, unsigned int idx, const CBlockIndex* pBlockIndex);
 

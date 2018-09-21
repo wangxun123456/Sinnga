@@ -56,7 +56,7 @@
 
 extern int mastercore_handler_disc_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_disc_end(int nBlockNow, CBlockIndex const * pBlockIndex);
-extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex * pBlockIndex);
+extern int mastercore_handler_block_begin(int nBlockNow, CBlockIndex const * pBlockIndex);
 extern int mastercore_handler_block_end(int nBlockNow, CBlockIndex const * pBlockIndex, unsigned int);  
 extern bool mastercore_handler_tx(const CTransaction& tx, int nBlock, unsigned int idx, const CBlockIndex* pBlockIndex);
 /**
@@ -2298,7 +2298,6 @@ void static UpdateTip(const CBlockIndex *pindexNew, const CChainParams& chainPar
     LogPrintf("\n");
 
 }
-
 /** Disconnect chainActive's tip.
   * After calling, the mempool will be in an inconsistent state, with
   * transactions from disconnected blocks being added to disconnectpool.  You
@@ -2483,7 +2482,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
     int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
     LogPrint(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime5 - nTime4) * MILLI, nTimeChainState * MICRO, nTimeChainState * MILLI / nBlocksTotal);
 
-
+//jg
 	//! Omni Core: transaction position within the block
 	unsigned int nTxIdx = 0;
 	//! Omni Core: number of meta transactions found
@@ -2502,7 +2501,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
 
 	//! Omni Core: end of block connect notification
 	LogPrint(BCLog::BENCH, "handler", "Omni Core handler: block connect end [new height: %d, found: %u txs]\n", GetHeight(), nNumMetaTxs);
-//	mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
+	mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime5) * MILLI, nTimePostConnect * MICRO, nTimePostConnect * MILLI / nBlocksTotal);

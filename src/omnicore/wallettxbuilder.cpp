@@ -150,11 +150,11 @@ int WalletTxBuilder(
 #ifdef ENABLE_WALLET
 /** Locks all available coins that are not in the set of destinations. */
 static void LockUnrelatedCoins(
-        CWallet* pwalletMain,
+        CWallet* pwallet,
         const std::set<CTxDestination>& destinations,
         std::vector<COutPoint>& retLockedCoins)
 {
-    if (pwalletMain == NULL) {
+    if (pwallet== NULL) {
         return;
     }
 
@@ -162,7 +162,7 @@ static void LockUnrelatedCoins(
 
     // lock any other output
     std::vector<COutput> vCoins;
-    pwalletMain->AvailableCoins(vCoins, false, nullptr, true);
+    pwallet->AvailableCoins(vCoins, false, nullptr, true);
 
     for (COutput& output : vCoins) {
         CTxDestination address;
@@ -175,24 +175,24 @@ static void LockUnrelatedCoins(
         }
 
         COutPoint outpointLocked(output.tx->GetHash(), output.i);
-        pwalletMain->LockCoin(outpointLocked);
+        pwallet->LockCoin(outpointLocked);
         retLockedCoins.push_back(outpointLocked);
     }
 }
 
 /** Unlocks all coins, which were previously locked. */
 static void UnlockCoins(
-        CWallet* pwalletMain,
+        CWallet* pwallet,
         const std::vector<COutPoint>& vToUnlock)
 {
-    if (pwalletMain == NULL) {
+    if (pwallet== NULL) {
         return;
     }
 
-    // NOTE: require: LOCK2(cs_main, pwalletMain->cs_wallet);
+    // NOTE: require: LOCK2(cs_main, pwallet->cs_wallet);
 
     for (const COutPoint& output : vToUnlock) {
-        pwalletMain->UnlockCoin(output);
+        pwallet->UnlockCoin(output);
     }
 }
 #endif

@@ -1,5 +1,5 @@
 #include "omnicore/walletutils.h"
-
+#include "wallet_ref.h"
 #include "omnicore/log.h"
 #include "omnicore/omnicore.h"
 #include "omnicore/rules.h"
@@ -24,17 +24,17 @@
 #include "script/ismine.h"
 #include "wallet/wallet.h"
 #endif
+#include "wallet/rpcwallet.h"
 
 #include <stdint.h>
 #include <algorithm>
 #include <map>
 #include <string>
 
-extern CWallet* pwalletMain; 
 unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 extern CTxMemPool mempool;
 extern CBlockPolicyEstimator feeEstimator;
-extern CFeeRate minRelayTxFee;  
+extern CFeeRate minRelayTxFee;
 namespace mastercore
 {
 
@@ -160,7 +160,7 @@ int IsMyAddress(const std::string& address)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         // TODO: resolve deadlock caused cs_tally, cs_wallet
-        // LOCK(pwalletMain->cs_wallet);
+        LOCK(pwalletMain->cs_wallet);
         isminetype isMine = IsMine(*pwalletMain, DecodeDestination(address));
 
         return static_cast<int>(isMine);

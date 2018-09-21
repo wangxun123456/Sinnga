@@ -5,6 +5,7 @@
  */
 
 #include "omnicore/rpctx.h"
+#include "omnicore/wallet_ref.h"
 
 #include "omnicore/createpayload.h"
 #include "omnicore/dex.h"
@@ -34,13 +35,15 @@
 using std::runtime_error;
 using namespace mastercore;
 
-extern CWallet* pwalletMain; 
 extern CCriticalSection cs_main;
-
+void omni_GetWalletForJSONRPCRequest(const JSONRPCRequest& request) 
+{
+	std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request);
+	pwalletMain = walletMain.get();
+}
 UniValue omni_funded_send(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+    omni_GetWalletForJSONRPCRequest(request); 
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 5)
@@ -92,8 +95,7 @@ UniValue omni_funded_send(const JSONRPCRequest& request)
 
 UniValue omni_funded_sendall(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 4)
@@ -139,9 +141,7 @@ UniValue omni_funded_sendall(const JSONRPCRequest& request)
 
 UniValue omni_sendrawtx(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
-
+    omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 2 || params.size() > 5)
@@ -186,9 +186,7 @@ UniValue omni_sendrawtx(const JSONRPCRequest& request)
 
 UniValue omni_send(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
-
+    omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 4 || params.size() > 6)
@@ -249,9 +247,7 @@ UniValue omni_send(const JSONRPCRequest& request)
 
 UniValue omni_sendall(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
-
+   omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 3 || params.size() > 5)
@@ -308,8 +304,7 @@ UniValue omni_sendall(const JSONRPCRequest& request)
 
 UniValue omni_senddexsell(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 7)
@@ -401,9 +396,7 @@ UniValue omni_senddexsell(const JSONRPCRequest& request)
 
 UniValue omni_senddexaccept(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
-
+    omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 4 || params.size() > 5)
@@ -487,8 +480,7 @@ UniValue omni_senddexaccept(const JSONRPCRequest& request)
 
 UniValue omni_sendissuancecrowdsale(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 14)
@@ -564,8 +556,7 @@ UniValue omni_sendissuancecrowdsale(const JSONRPCRequest& request)
 
 UniValue omni_sendissuancefixed(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 10)
@@ -631,8 +622,7 @@ UniValue omni_sendissuancefixed(const JSONRPCRequest& request)
 
 UniValue omni_sendissuancemanaged(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 9)
@@ -696,8 +686,7 @@ UniValue omni_sendissuancemanaged(const JSONRPCRequest& request)
 
 UniValue omni_sendsto(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 3 || params.size() > 5)
@@ -754,8 +743,7 @@ UniValue omni_sendsto(const JSONRPCRequest& request)
 
 UniValue omni_sendgrant(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 4 || params.size() > 5)
@@ -813,8 +801,7 @@ UniValue omni_sendgrant(const JSONRPCRequest& request)
 
 UniValue omni_sendrevoke(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 3 || params.size() > 4)
@@ -871,8 +858,7 @@ UniValue omni_sendrevoke(const JSONRPCRequest& request)
 
 UniValue omni_sendclosecrowdsale(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 2)
@@ -925,8 +911,7 @@ UniValue omni_sendclosecrowdsale(const JSONRPCRequest& request)
 
 UniValue trade_MP(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 6)
@@ -1000,8 +985,7 @@ UniValue trade_MP(const JSONRPCRequest& request)
 
 UniValue omni_sendtrade(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 5)
@@ -1062,8 +1046,7 @@ UniValue omni_sendtrade(const JSONRPCRequest& request)
 
 UniValue omni_sendcanceltradesbyprice(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 5)
@@ -1124,8 +1107,7 @@ UniValue omni_sendcanceltradesbyprice(const JSONRPCRequest& request)
 
 UniValue omni_sendcanceltradesbypair(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 3)
@@ -1182,8 +1164,7 @@ UniValue omni_sendcanceltradesbypair(const JSONRPCRequest& request)
 
 UniValue omni_sendcancelalltrades(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 2)
@@ -1234,8 +1215,7 @@ UniValue omni_sendcancelalltrades(const JSONRPCRequest& request)
 
 UniValue omni_sendchangeissuer(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 3)
@@ -1341,8 +1321,7 @@ UniValue omni_sendenablefreezing(const JSONRPCRequest& request)
 
 UniValue omni_senddisablefreezing(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 2)
@@ -1395,8 +1374,7 @@ UniValue omni_senddisablefreezing(const JSONRPCRequest& request)
 
 UniValue omni_sendfreeze(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 4)
@@ -1450,8 +1428,7 @@ UniValue omni_sendfreeze(const JSONRPCRequest& request)
 
 UniValue omni_sendunfreeze(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 4)
@@ -1505,8 +1482,7 @@ UniValue omni_sendunfreeze(const JSONRPCRequest& request)
 
 UniValue omni_sendactivation(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 4)
@@ -1554,8 +1530,7 @@ UniValue omni_sendactivation(const JSONRPCRequest& request)
 
 UniValue omni_senddeactivation(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 2)
@@ -1599,8 +1574,7 @@ UniValue omni_senddeactivation(const JSONRPCRequest& request)
 
 UniValue omni_sendalert(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request); 
-	 pwalletMain = walletMain.get();
+	omni_GetWalletForJSONRPCRequest(request);   
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() != 4)

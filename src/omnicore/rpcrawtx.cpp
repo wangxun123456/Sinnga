@@ -1,5 +1,5 @@
 #include "omnicore/rpcrawtx.h"
-
+#include "omnicore/wallet_ref.h"
 #include "omnicore/createtx.h"
 #include "omnicore/omnicore.h"
 #include "omnicore/rpc.h"
@@ -10,36 +10,37 @@
 #include "core_io.h"
 #include "primitives/transaction.h"
 #include "pubkey.h"
+#include "init.h"
 #include "rpc/server.h"
 #include "sync.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
-#include "wallet/rpcwallet.h"
 #endif
+#include "wallet/rpcwallet.h"
 #include <univalue.h>
-#include "validation.h"
+
+//#include "validation.h"
 #include <stdint.h>
 #include <stdexcept>
 #include <string>
 
-CWallet* pwalletMain;
 
 using mastercore::cs_tx_cache;
 using mastercore::view;
+using namespace mastercore;
 
+extern CCriticalSection cs_main;
+extern void omni_GetWalletForJSONRPCRequest(const JSONRPCRequest& request);
 void LoadWalletMain(const JSONRPCRequest& request)
 {
-	//jg
-	//std::shared_ptr<CWallet> const walletMain = GetWalletForJSONRPCRequest(request);
-	//pwalletMain = walletMain.get(); 
-	
+	int i = testfunc();
+    omni_GetWalletForJSONRPCRequest(request);	
 }
 UniValue omni_decodetransaction(const JSONRPCRequest& request)
 {
      LoadWalletMain(request);
-
 	const UniValue &params = request.params; 
 	const bool& fHelp = request.fHelp;
     if (fHelp || params.size() < 1 || params.size() > 3)
