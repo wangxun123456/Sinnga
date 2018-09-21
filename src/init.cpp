@@ -61,6 +61,8 @@
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
 
+#include <witness.h>
+
 #if ENABLE_ZMQ
 #include <zmq/zmqnotificationinterface.h>
 #include <zmq/zmqrpc.h>
@@ -1760,6 +1762,8 @@ bool AppInitMain()
     uiInterface.InitMessage(_("Done loading"));
 
     g_wallet_init_interface.Start(scheduler);
+
+    MintStart(threadGroup);
 
     return true;
 }
