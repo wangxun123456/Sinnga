@@ -2,6 +2,7 @@
 #include <witness.h>
 #include <pubkey.h>
 #include <key_io.h>
+#include <base58.h>
 #include <wallet/wallet.h>
 #include <rpc/mining.h>
 
@@ -10,11 +11,36 @@
 int64_t block_interval=10;//10s
 int64_t new_round_begin_time=0;
 bool round_generated=false;
-CKeyID local_keyid;
-std::vector<CKeyID> witness_keys;
+uint160 local_address;
+std::vector<uint160> witness_keys;
 
-bool GreaterSort(CKeyID a,CKeyID b){
+bool GreaterSort(uint160 a,uint160 b){
     return a < b;
+}
+
+uint160 Address2uint160(const std::string& address)
+{
+    const CChainParams& params=Params();
+    std::vector<unsigned char> data;
+    uint160 hash;
+    if (DecodeBase58Check(address, data)) {
+        // base58-encoded Bitcoin addresses.
+        // Public-key-hash-addresses have version 0 (or 111 testnet).
+        // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
+        const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
+        if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix.begin(), pubkey_prefix.end(), data.begin())) {
+            std::copy(data.begin() + pubkey_prefix.size(), data.end(), hash.begin());
+            return hash;
+        }
+        // Script-hash-addresses have version 5 (or 196 testnet).
+        // The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
+        const std::vector<unsigned char>& script_prefix = params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
+        if (data.size() == hash.size() + script_prefix.size() && std::equal(script_prefix.begin(), script_prefix.end(), data.begin())) {
+            std::copy(data.begin() + script_prefix.size(), data.end(), hash.begin());
+            return hash;
+        }
+    }
+    return uint160();
 }
 
 bool GetLocalKeyID(CWallet* const pwallet)
@@ -23,16 +49,23 @@ bool GetLocalKeyID(CWallet* const pwallet)
     witness_keys.clear();
     for(auto &address:vWitnessAddresses)
     {
-        CTxDestination dest = DecodeDestination(address);
-        if (!IsValidDestination(dest)) {
-            continue;
+        uint160 u160addr = Address2uint160(address);
+        if (u160addr.IsNull()) {
+            LogPrintf("Error:address %s is invalid",address);
+            return false;
         }
+        witness_keys.push_back(u160addr);
+
+        CTxDestination dest = DecodeDestination(address);
         auto keyid = GetKeyForDestination(*pwallet, dest);
         if (keyid.IsNull()) {
             continue;
         }
-        local_keyid=keyid;
-        witness_keys.push_back(keyid);
+        CKey vchSecret;
+        if (!pwallet->GetKey(keyid, vchSecret)) {
+            continue;;
+        }
+        local_address=u160addr;
         find = true;
     }
     std::sort(witness_keys.begin(),witness_keys.end(),GreaterSort);
@@ -49,8 +82,9 @@ void MaybeProduceBlock(CWallet* const pwallet)
         LogPrintf("index > PRODUCE_NODE_COUNT");
         return;
     }
-    if(witness_keys[index]==local_keyid&&!round_generated)
+    if(witness_keys[index]==local_address&&!round_generated)
     {
+        LogPrintf("Info:Generate block,time pass:%d,index:%d",time_pass,index);
         std::shared_ptr<CReserveScript> coinbase_script;
         pwallet->GetScriptForMining(coinbase_script);
 
