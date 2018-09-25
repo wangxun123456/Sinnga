@@ -36,8 +36,6 @@
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 //
-extern std::map<NodeId,std::set<WitnessId>> mapNodeHaveConfirm;
-
 /** Expiration time for orphan transactions in seconds */
 static constexpr int64_t ORPHAN_TX_EXPIRE_TIME = 20 * 60;
 /** Minimum time between orphan transactions expire time checks in seconds */
@@ -909,6 +907,7 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
     std::shared_ptr<const CBlockHeaderAndShortTxIDs> pcmpctblock = std::make_shared<const CBlockHeaderAndShortTxIDs> (*pblock, true);
     const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
 
+    HLOG("in");
     LOCK(cs_main);
 
     static int nHighestFastAnnounce = 0;
@@ -938,6 +937,7 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
         // If the peer has, or we announced to them the previous block already,
         // but we don't think they have this one, go ahead and announce it
 
+        HLOG("fPreferHeaderAndIDs = %d",state.fPreferHeaderAndIDs);
         if (state.fPreferHeaderAndIDs && (!fWitnessEnabled || state.fWantsCmpctWitness) &&
                 !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev)) {
 
@@ -952,13 +952,16 @@ void PeerLogicValidation::RelayConfirm(const std::shared_ptr<const CBlockConfirm
 {
     LOCK(cs_main);
 
-    const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
+    extern std::map<CBlockConfirm,std::set<NodeId>> mapConfirmNodeHave;
 
-    if(confirm->Height() != chainActive.Height()+1)
-        return;
-    connman->ForEachNode([this, &confirm,&msgMaker](CNode* pnode) {
+    const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
+    connman->ForEachNode([this, &confirm,&msgMaker](CNode* pnode)
+    {
         if(!NodeHaveConfirm(pnode->GetId(),*confirm))
+        {
+            AddConfirmToNode(*confirm,pnode);
             connman->PushMessage(pnode, msgMaker.Make(NetMsgType::BLOCKCONFIRM, *confirm));
+        }
     });
 }
 /**
@@ -1608,8 +1611,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             return false;
         }
     }
-
-    printf("recv cmd = %s\n",strCommand.c_str());
+    HLOG("recv = %s",strCommand.c_str());
     if (strCommand == NetMsgType::REJECT)
     {
         if (LogAcceptCategory(BCLog::NET)) {
@@ -1937,8 +1939,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 State(pfrom->GetId())->fProvidesHeaderAndIDs = true;
                 State(pfrom->GetId())->fWantsCmpctWitness = nCMPCTBLOCKVersion == 2;
             }
+
             if (State(pfrom->GetId())->fWantsCmpctWitness == (nCMPCTBLOCKVersion == 2)) // ignore later version announces
-                State(pfrom->GetId())->fPreferHeaderAndIDs = fAnnounceUsingCMPCTBLOCK;
+//                State(pfrom->GetId())->fPreferHeaderAndIDs = fAnnounceUsingCMPCTBLOCK;
+                  State(pfrom->GetId())->fPreferHeaderAndIDs = true;
+
             if (!State(pfrom->GetId())->fSupportsDesiredCmpctVersion) {
                 if (pfrom->GetLocalServices() & NODE_WITNESS)
                     State(pfrom->GetId())->fSupportsDesiredCmpctVersion = (nCMPCTBLOCKVersion == 2);

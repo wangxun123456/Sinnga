@@ -8,11 +8,10 @@
 #include <set>
 #include <boost/lexical_cast.hpp>
 
-
 #define __HLOG__
 
 #ifdef __HLOG__
-#define HLOG(format,...) printf("FILE: " __FILE__ ", LINE: %d: " format "\n", __LINE__, ##__VA_ARGS__)
+#define HLOG(format,...) printf("FUNC: %s, LINE: %d: " format "\n",__FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
 #define HLOG(format,...)
 #endif
@@ -73,6 +72,7 @@ class CChainParams;
 typedef int64_t NodeId;
 
 bool NodeHaveConfirm(const NodeId &id, const CBlockConfirm &confirm);
+void AddConfirmToNode(const CBlockConfirm &confirm,const CNode *node);
 bool ProcessConfirm(const std::shared_ptr<const CBlockConfirm> &confirm, const CNode *node);
 bool ProcessNewBlockBft(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock);
 #endif // BLOCKCONFIRM_H
