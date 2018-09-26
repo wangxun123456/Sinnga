@@ -173,7 +173,9 @@ static bool HaveConfirm(const CBlockConfirm &confirm)
 {
     HLOG("in");
     {
-        make_unique_lock(mapBlockConfirmLock);
+        auto lock = make_unique_lock(mapBlockConfirmLock);
+        assert(lock.owns_lock());
+
         const auto &setConfirm = mapBlockConfirm.find(confirm.Hash());
         if(setConfirm == mapBlockConfirm.end())
             return false;
@@ -181,7 +183,9 @@ static bool HaveConfirm(const CBlockConfirm &confirm)
             return false;
     }
     {
-        make_unique_lock(mapConfirmNotHaveBlockLock);
+        auto lock = make_unique_lock(mapConfirmNotHaveBlockLock);
+        assert(lock.owns_lock());
+
         const auto &setConfirm = mapConfirmNotHaveBlock.find(confirm.Hash());
         if(setConfirm == mapConfirmNotHaveBlock.end())
             return false;
@@ -206,7 +210,9 @@ static int GetHeight(const uint256& blockHash)
     CBlockIndex *pindex = LookupBlockIndex(blockHash);
     if(pindex)
         return pindex->nHeight;
-    make_unique_lock(mapBlockConfirmLock);
+    auto lock = make_unique_lock(mapBlockConfirmLock);
+    assert(lock.owns_lock());
+
     const auto & setConfirm = mapBlockConfirm.find(blockHash);
     if(setConfirm != mapBlockConfirm.end())
     {
@@ -263,12 +269,16 @@ static void AddConfirmToLocal(const CBlockConfirm &confirm)
 
     if(!LookupBlockIndex(confirm.Hash()))
     {
-        make_unique_lock(mapConfirmNotHaveBlockLock);
+        auto lock  = make_unique_lock(mapConfirmNotHaveBlockLock);
+        assert(lock.owns_lock());
+
         mapConfirmNotHaveBlock[confirm.Hash()].insert(confirm);
     }
     else
     {
-        make_unique_lock(mapBlockConfirmLock);
+        auto lock  = make_unique_lock(mapBlockConfirmLock);
+        assert(lock.owns_lock());
+
         mapBlockConfirm[confirm.Hash()].insert(confirm);
     }
     HLOG("out");
@@ -285,7 +295,9 @@ void AddConfirmToNode(const CBlockConfirm &confirm,const CNode *node)
     if(node == nullptr)
         return;
     {
-        make_unique_lock(mapConfirmNodeHaveLock);
+        auto lock = make_unique_lock(mapConfirmNodeHaveLock);
+        assert(lock.owns_lock());
+
         const auto & pconfirm = mapConfirmNodeHave.find(confirm);
         if(pconfirm == mapConfirmNodeHave.end())
             mapConfirmNodeHave.insert(std::pair<CBlockConfirm,std::set<NodeId>>(confirm,{node->GetId()}));
@@ -304,7 +316,8 @@ void AddConfirmToNode(const CBlockConfirm &confirm,const CNode *node)
 static void AddConfirmToWitness(const CBlockConfirm &confirm)
 {
     HLOG("in");
-    make_unique_lock(mapWitnessMaxConfirmHeightLock);
+    auto lock  = make_unique_lock(mapWitnessMaxConfirmHeightLock);
+    assert(lock.owns_lock());
 
     if(mapWitnessMaxConfirmHeight.find(confirm.Id()) == mapWitnessMaxConfirmHeight.end())
     {
@@ -323,7 +336,9 @@ static void AddConfirmToWitness(const CBlockConfirm &confirm)
 static bool HaveEnoughConfirm(const uint256 &blockHash)
 {
     HLOG("in");
-    make_unique_lock(mapBlockConfirmLock);
+    auto lock = make_unique_lock(mapBlockConfirmLock);
+    assert(lock.owns_lock());
+
     const auto & pcon= mapBlockConfirm.find(blockHash);
     if(pcon == mapBlockConfirm.end())
         return false;
@@ -463,7 +478,8 @@ static void ReleaseConfirm()
     HLOG("in");
     int height = chainActive.Tip()->nHeight-MAX_RECORD_KEEPING_NUM;
     {
-        make_unique_lock(mapBlockConfirmLock);
+        auto lock = make_unique_lock(mapBlockConfirmLock);
+        assert(lock.owns_lock());
         for( auto iter = mapBlockConfirm.begin();iter != mapBlockConfirm.end();)
         {
             if(GetHeight(iter->first) <= height)
@@ -472,9 +488,7 @@ static void ReleaseConfirm()
                 HLOG("mapBlockConfirm.size = %d",mapBlockConfirm.size());
                 mapBlockConfirm.erase(iter++);
                 HLOG("after mapBlockConfirm.size = %d",mapBlockConfirm.size());
-
                 HLOG("after erase mapBlockConfirm");
-
             }
             else
             {
@@ -483,7 +497,9 @@ static void ReleaseConfirm()
         }
     }
     {
-        make_unique_lock(mapConfirmNodeHaveLock);
+        auto lock = make_unique_lock(mapConfirmNodeHaveLock);
+        assert(lock.owns_lock());
+
         for(auto iter = mapConfirmNodeHave.begin();iter != mapConfirmNodeHave.end();)
         {
             if(GetHeight(iter->first.Hash()) <= height)
@@ -503,7 +519,9 @@ static void ReleaseConfirm()
     }
 
     {
-        make_unique_lock(mapConfirmNotHaveBlockLock);
+        auto lock = make_unique_lock(mapConfirmNotHaveBlockLock);
+        assert(lock.owns_lock());
+
         for(auto iter = mapConfirmNotHaveBlock.begin();iter != mapConfirmNotHaveBlock.end();)
         {
 
@@ -577,7 +595,9 @@ bool NodeHaveConfirm(const NodeId &id,const CBlockConfirm &confirm)
     HLOG("in");
 
     {
-        make_unique_lock(mapConfirmNodeHaveLock);
+        auto lock = make_unique_lock(mapConfirmNodeHaveLock);
+        assert(lock.owns_lock());
+
         const auto & setNode = mapConfirmNodeHave.find(confirm);
         if(setNode == mapConfirmNodeHave.end())
             return false;
@@ -600,21 +620,12 @@ bool ProcessConfirm(const std::shared_ptr<const CBlockConfirm> &confirm,const CN
 {
     HLOG("in");
 
-    try
-    {
-        if(!AcceptConfirm(confirm,node))
-            return false;
-        RelayConfirm(confirm);
-        HLOG("out");
+    if(!AcceptConfirm(confirm,node))
+        return false;
+    RelayConfirm(confirm);
+    HLOG("out");
 
-        ActivateBestChainBft(*confirm);
-    }
-    catch(...)
-    {
-        HLOG("ProcessConfirm catch.......................");
-        throw;
-    }
-    return true;
+    return ActivateBestChainBft(*confirm);
 }
 
 /***************************************************
@@ -629,23 +640,14 @@ bool ProcessConfirm(const std::shared_ptr<const CBlockConfirm> &confirm,const CN
  **************************************************/
 bool ProcessNewBlockBft(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock,bool fForceProcessing, bool *fNewBlock)
 {    
-    try
-    {
-        HLOG("in");
-        if(!ProcessNewBlock(chainparams,pblock,fForceProcessing,fNewBlock,true))
-            return false;
-        HLOG("pblock height = %d",LookupBlockIndex(pblock->GetHash())->nHeight);
-        const auto & confirm = GenerateConfirm(pblock);
-        AddConfirm(*confirm);
-        RelayConfirm(confirm);
-        UpdateConfirmToBlock(pblock);
-        HLOG("out");
-        ActivateBestChainBft(*confirm);
-    }
-    catch(...)
-    {
-        HLOG("ProcessNewBlockBft catching");
-        throw;
-    }
-    return true;
+    HLOG("in");
+    if(!ProcessNewBlock(chainparams,pblock,fForceProcessing,fNewBlock,true))
+        return false;
+    HLOG("pblock height = %d",LookupBlockIndex(pblock->GetHash())->nHeight);
+    const auto & confirm = GenerateConfirm(pblock);
+    AddConfirm(*confirm);
+    RelayConfirm(confirm);
+    UpdateConfirmToBlock(pblock);
+    HLOG("out");
+    return ActivateBestChainBft(*confirm);
 }

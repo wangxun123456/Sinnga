@@ -28,7 +28,8 @@ public:
         m_height(heightIn){}
     ~CBlockConfirm()
     {
-        HLOG("cblockconfirm release.......");
+        HLOG("in ~CBlockConfirm");
+        HLOG("confirm = %s",ToString().c_str());
     }
     void SetNull(){m_hashBlock.SetNull();}
     bool IsNull() const {return m_hashBlock.IsNull();}
@@ -52,7 +53,7 @@ public:
         return (a.m_witnessId < b.m_witnessId || (a.m_witnessId == b.m_witnessId && a.m_hashBlock < b.m_hashBlock));
     }
 
-    std::string ToString()const{return std::string();}
+    std::string ToString()const{return  m_hashBlock.ToString() + ":" + m_witnessId+ ":"+ boost::lexical_cast<std::string>(m_height);}
 
 
 private:
