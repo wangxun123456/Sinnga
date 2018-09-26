@@ -26,6 +26,10 @@ public:
         m_hashBlock(hashBlockIn),
         m_witnessId(nodeIdIn),
         m_height(heightIn){}
+    ~CBlockConfirm()
+    {
+        HLOG("cblockconfirm release.......");
+    }
     void SetNull(){m_hashBlock.SetNull();}
     bool IsNull() const {return m_hashBlock.IsNull();}
     uint256 Hash() const {return m_hashBlock;}
@@ -43,19 +47,9 @@ public:
         READWRITE(m_witnessId);
         READWRITE(m_height);
     }
-    friend bool operator<(const CBlockConfirm & a, const CBlockConfirm& b)
+    friend bool operator <(const CBlockConfirm & a, const CBlockConfirm& b)
     {
-        if (a.m_witnessId < b.m_witnessId)
-            return true;
-        else if(a.m_witnessId == b.m_witnessId)
-        {
-            return a.m_hashBlock < b.m_hashBlock;
-        }
-    }
-
-    friend bool operator == (const CBlockConfirm & a, const CBlockConfirm& b)
-    {
-        return ((a.m_witnessId==b.m_witnessId) && (a.m_hashBlock==b.m_hashBlock) && (a.m_height==b.m_height));
+        return (a.m_witnessId < b.m_witnessId || (a.m_witnessId == b.m_witnessId && a.m_hashBlock < b.m_hashBlock));
     }
 
     std::string ToString()const{return std::string();}
