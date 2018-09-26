@@ -447,9 +447,10 @@ UniValue omni_senddexaccept(const JSONRPCRequest& request)
     }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
-//jg
+    //jg checked
     // temporarily update the global transaction fee to pay enough for the accept fee
-    CFeeRate payTxFeeOriginal = CFeeRate(nMinimumAcceptFee, 225); // TODO: refine!
+    CFeeRate payTxFeeOriginal = pwalletMain->m_pay_tx_fee;
+	pwalletMain->m_pay_tx_fee = CFeeRate(nMinimumAcceptFee, 225); // TODO: refine!
     // fPayAtLeastCustomFee = true;
 #endif
 
@@ -463,7 +464,8 @@ UniValue omni_senddexaccept(const JSONRPCRequest& request)
 
 #ifdef ENABLE_WALLET
     // set the custom fee back to original
-	// jg del
+	//jg checked
+	pwalletMain->m_pay_tx_fee = payTxFeeOriginal;
 #endif
 
     // check error and return the txid (or raw hex depending on autocommit)

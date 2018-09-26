@@ -525,21 +525,22 @@ void SetupServerArgs()
 
 
 	//Omni args
-	gArgs.AddArg("-startclean", "Clear all persistence files on startup; triggers reparsing of Omni transactions (default: 0)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omnitxcache", "The maximum number of transactions in the input transaction cache (default: 500000)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omniprogressfrequency", "Time in seconds after which the initial scanning progress is reported (default: 30)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omniseedblockfilter", "Set skipping of blocks without Omni transactions during initial scan (default: 1)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omnilogfile", "The path of the log file (default: omnicore.log)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omnidebug=<category>", "Enable or disable log categories, can be \"all\" or \"none\"", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-autocommit", "Enable or disable broadcasting of transactions, when creating transactions (default: 1)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-overrideforcedshutdown", "Overwrite shutdown, triggered by an alert (default: 0)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omnialertallowsender", "Whitelist senders of alerts, can be \"any\")", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omnialertignoresender", "Ignore senders of alerts", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omniactivationignoresender", "Ignore senders of activations", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omniactivationallowsender", "Whitelist senders of activations", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-disclaimer", "Explicitly show QT disclaimer on startup (default: 0)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omniuiwalletscope", "Max. transactions to show in trade and transaction history (default: 65535)", false,OptionsCategory::OMNI);
-	gArgs.AddArg("-omnishowblockconsensushash", "Calculate and log the consensus hash for the specified block", false,OptionsCategory::OMNI);
+	gArgs.AddArg("-rpcforceutf8", "Replace invalid UTF-8 encoded characters with question marks in RPC response (default: 1)", true, OptionsCategory::OMNI);
+	gArgs.AddArg("-startclean", "Clear all persistence files on startup; triggers reparsing of Omni transactions (default: 0)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omnitxcache", "The maximum number of transactions in the input transaction cache (default: 500000)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omniprogressfrequency", "Time in seconds after which the initial scanning progress is reported (default: 30)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omniseedblockfilter", "Set skipping of blocks without Omni transactions during initial scan (default: 1)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omnilogfile", "The path of the log file (default: omnicore.log)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omnidebug=<category>", "Enable or disable log categories, can be \"all\" or \"none\"", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-autocommit", "Enable or disable broadcasting of transactions, when creating transactions (default: 1)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-overrideforcedshutdown", "Overwrite shutdown, triggered by an alert (default: 0)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omnialertallowsender", "Whitelist senders of alerts, can be \"any\")", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omnialertignoresender", "Ignore senders of alerts", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omniactivationignoresender", "Ignore senders of activations", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omniactivationallowsender", "Whitelist senders of activations", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-disclaimer", "Explicitly show QT disclaimer on startup (default: 0)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omniuiwalletscope", "Max. transactions to show in trade and transaction history (default: 65535)", false, OptionsCategory::OMNI);
+	gArgs.AddArg("-omnishowblockconsensushash", "Calculate and log the consensus hash for the specified block", false, OptionsCategory::OMNI);
 
 #if HAVE_DECL_DAEMON
     gArgs.AddArg("-daemon", "Run in the background as a daemon and accept commands", false, OptionsCategory::OPTIONS);

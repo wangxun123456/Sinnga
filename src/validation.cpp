@@ -2482,7 +2482,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
     int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
     LogPrint(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime5 - nTime4) * MILLI, nTimeChainState * MICRO, nTimeChainState * MILLI / nBlocksTotal);
 
-//jg
+//jg checked
 	//! Omni Core: transaction position within the block
 	unsigned int nTxIdx = 0;
 	//! Omni Core: number of meta transactions found
@@ -2499,8 +2499,13 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
     chainActive.SetTip(pindexNew);
     UpdateTip(pindexNew, chainparams);
 
+	for(CTransactionRef tx : pblock->vtx) {
+		LogPrint(BCLog::BENCH, "Omni Core handler: new confirmed transaction [height: %d, idx: %u]\n", GetHeight(), nTxIdx);
+		if (mastercore_handler_tx(*tx, chainActive.Height(), nTxIdx++, pindexNew)) ++nNumMetaTxs;
+	}
+
 	//! Omni Core: end of block connect notification
-	LogPrint(BCLog::BENCH, "handler", "Omni Core handler: block connect end [new height: %d, found: %u txs]\n", GetHeight(), nNumMetaTxs);
+	LogPrint(BCLog::BENCH, "Omni Core handler: block connect end [new height: %d, found: %u txs]\n", GetHeight(), nNumMetaTxs);
 	mastercore_handler_block_end(GetHeight(), pindexNew, nNumMetaTxs);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;

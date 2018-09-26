@@ -69,7 +69,6 @@ extern  CChain& chainActive;
 extern CCriticalSection cs_main;  
 extern CTxMemPool mempool;
 extern bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
-extern bool GetTransaction(const uint256& hash, CTransactionRef& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool fAllowSlow, CBlockIndex* blockIndex);
 extern void LoadWalletMain(const JSONRPCRequest& request);
 /**
  * Throws a JSONRPCError, depending on error code.
@@ -546,8 +545,8 @@ UniValue omni_getpayload(const JSONRPCRequest& request)
 
     CTransactionRef tx;
     uint256 blockHash;
-	//jg
-    if (!GetTransaction(txid, tx, Params().GetConsensus(), blockHash, true, nullptr)) {
+	//jg checked
+    if (!GetTransaction(txid, tx, Params().GetConsensus(), blockHash, true)) {
         PopulateFailure(MP_TX_NOT_FOUND);
     }
 
@@ -926,7 +925,8 @@ static std::set<std::string> getWalletAddresses(bool fIncludeWatchOnly)
     LOCK(pwalletMain->cs_wallet);
 
     for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
-        //const CBitcoinAddress& address = item.first; //jg
+        //const CBitcoinAddress& address = item.first; 
+		//jg checked
         isminetype iIsMine = IsMine(*pwalletMain, item.first);
 
         if (iIsMine == ISMINE_SPENDABLE || (fIncludeWatchOnly && iIsMine != ISMINE_NO)) {

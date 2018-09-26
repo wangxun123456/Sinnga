@@ -107,12 +107,11 @@ UniValue omni_decodetransaction(const JSONRPCRequest& request)
     {
         LOCK2(cs_main, cs_tx_cache);
         // temporarily switch global coins view cache for transaction inputs
-		//jg 因为新的view 删除了拷贝构造函数，此处swap不能再用,暂时注释掉，想其他办法
+		//jg check... 因为新的view 删除了拷贝构造函数，此处swap不能再用,暂时注释掉，想其他办法
         //std::swap(view, viewTemp);
         // then get the results
         populateResult = populateRPCTransactionObject(tx, uint256(), txObj, "", false, "", blockHeight);
         // and restore the original, unpolluted coins view cache
-		//jg
         //std::swap(viewTemp, view);
     }
 

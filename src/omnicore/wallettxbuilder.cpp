@@ -122,10 +122,10 @@ int WalletTxBuilder(
         retRawTx = EncodeHexTx(*txNew);
         return 0;
     } else {
-//jg 
+//jg checking...
 		auto it = pwalletMain->mapWallet.find(txNew->GetHash());
 		if (it == pwalletMain->mapWallet.end()) {
-			LogPrintf("not found wallet from mapwalletMain."); 
+			LogPrintf("not found wallet from pwalletMain->mapwallet."); 
 //			return MP_ERR_WALLET_ACCESS;
 		}
 /*	    CWalletTx& oldWtx = it->second;

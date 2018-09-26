@@ -811,7 +811,7 @@ static unsigned int nCacheMiss = 0;
  * @param tx[in]  The transaction to fetch inputs for
  * @return True, if all inputs were successfully added to the cache
  */
-static bool FillTxInputCache(const CTransaction& tx)
+static bool FillTxInputCache(const CTransaction& tx, int Height)
 {
     static unsigned int nCacheSize = gArgs.GetArg("-omnitxcache", 500000);
 
@@ -821,29 +821,7 @@ static bool FillTxInputCache(const CTransaction& tx)
         view.Flush();
     }
 
-    for (std::vector<CTxIn>::const_iterator it = tx.vin.begin(); it != tx.vin.end(); ++it) {
-        const CTxIn& txIn = *it;
-        unsigned int nOut = txIn.prevout.n;
-       // CCoinsModifier coins = view.ModifyCoins(txIn.prevout.hash);
-
-       if(view.HaveCoinInCache(txIn.prevout)) {
-            ++nCacheHits;
-            continue;
-        } else {
-            ++nCacheMiss;
-        }
-
-        CTransactionRef txPrev;
-        uint256 hashBlock;
-        if (!GetTransaction(txIn.prevout.hash, txPrev, Params().GetConsensus(), hashBlock, true)) {
-            return false;
-        }
-
-		//jg
-
-		//view.AddCoin(txIn.prevout, std::move(Coin(txIn.prevout, 1, false)), true);
-    }
-
+    AddCoins(view, tx, Height);	
     return true;
 }
 
@@ -878,7 +856,7 @@ static int parseTransaction(bool bRPConly, const CTransaction& wtx, int nBlock, 
     LOCK2(cs_main, cs_tx_cache); // cs_main should be locked first to avoid deadlocks with cs_tx_cache at FillTxInputCache(...)->GetTransaction(...)->LOCK(cs_main)
 
     // Add previous transaction inputs to the cache
-    if (!FillTxInputCache(wtx)) {
+    if (!FillTxInputCache(wtx, nBlock)) {
         PrintToLog("%s() ERROR: failed to get inputs for %s\n", __func__, wtx.GetHash().GetHex());
         return -101;
     }
@@ -1189,7 +1167,7 @@ static int parseTransaction(bool bRPConly, const CTransaction& wtx, int nBlock, 
                 if (msc_debug_parser_data) {
                     CPubKey key(ParseHex(multisig_script_data[k]));
                     CKeyID keyID = key.GetID();
-					//jg
+					//jg checking...
                     std::string strAddress = EncodeDestination(GetDestinationForKey(key, OutputType::P2SH_SEGWIT));
                     PrintToLog("multisig_data[%d]:%s: %s\n", k, multisig_script_data[k], strAddress);
                 }

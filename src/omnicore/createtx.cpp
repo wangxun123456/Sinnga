@@ -179,6 +179,7 @@ return (OmniTxBuilder&) TxBuilder::addChange(DecodeDestination(destination), vie
 /** Adds previous transaction outputs to coins view. */
 void InputsToView(const std::vector<PrevTxsEntry>& prevTxs, CCoinsViewCache& view)
 {
+    int height = 0;
     for (std::vector<PrevTxsEntry>::const_iterator it = prevTxs.begin(); it != prevTxs.end(); ++it) {
 	    
 	    if(!view.HaveCoinInCache(it->outPoint)) {

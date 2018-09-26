@@ -29,7 +29,8 @@ std::string ParseAddress(const UniValue& value)
     if(!IsValidDestinationString(value.get_str())) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
     }
-	//jg CBitcoinAddress address = value.get_str()
+	//jg checked
+	//CBitcoinAddress address = value.get_str()
     //return address.ToString();
 	return EncodeDestination(DecodeDestination(value.get_str()));
 }
