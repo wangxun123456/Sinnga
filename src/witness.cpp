@@ -51,7 +51,7 @@ bool GetLocalKeyID(CWallet* const pwallet)
     {
         uint160 u160addr = Address2uint160(address);
         if (u160addr.IsNull()) {
-            LogPrintf("Error:address %s is invalid",address);
+            LogPrintf("Error:address %s is invalid\n",address);
             return false;
         }
         witness_keys.push_back(u160addr);
@@ -79,24 +79,24 @@ void MaybeProduceBlock(CWallet* const pwallet)
     int time_pass=GetTime()-new_round_begin_time;
     int index=time_pass/block_interval;
     if(index>=PRODUCE_NODE_COUNT){
-        LogPrintf("index > PRODUCE_NODE_COUNT");
+        LogPrintf("index > PRODUCE_NODE_COUNT\n");
         return;
     }
     if(witness_keys[index]==local_address&&!round_generated)
     {
-        LogPrintf("Info:Generate block,time pass:%d,index:%d",time_pass,index);
+        LogPrintf("Info:Generate block,time pass:%d,index:%d\n",time_pass,index);
         std::shared_ptr<CReserveScript> coinbase_script;
         pwallet->GetScriptForMining(coinbase_script);
 
         // If the keypool is exhausted, no script is returned at all.  Catch this.
         if (!coinbase_script) {
-            LogPrintf("Error: Keypool ran out, please call keypoolrefill first");
+            LogPrintf("Error: Keypool ran out, please call keypoolrefill first\n");
             throw;
         }
 
         //throw an error if no script was provided
         if (coinbase_script->reserveScript.empty()) {
-            LogPrintf("No coinbase script available");
+            LogPrintf("No coinbase script available\n");
             throw;
         }
         generateBlocks(coinbase_script, 1, 100000, true);
@@ -111,12 +111,12 @@ void ScheduleProductionLoop()
     CWallet* const pwallet = wallet.get();
     if (!pwallet||!EnsureWalletIsAvailable(pwallet, false))
     {
-        LogPrintf("Wallet does not exist or is not loaded");
+        LogPrintf("Wallet does not exist or is not loaded\n");
         throw;
     }
     while(!GetLocalKeyID(pwallet))
     {
-        LogPrintf("Local witness address not find");
+        LogPrintf("Local witness address not find\n");
         MilliSleep(1000);
         continue;
     }
@@ -127,7 +127,7 @@ void ScheduleProductionLoop()
         {
             while (pwallet->IsLocked())
             {
-                LogPrintf("Info: Minting suspended due to locked wallet.");;
+                LogPrintf("Info: Minting suspended due to locked wallet.\n");;
                 MilliSleep(1000);
             }
             if((GetTime()%(PRODUCE_NODE_COUNT*block_interval))<5&&(GetTime()-new_round_begin_time>block_interval)){
@@ -140,7 +140,7 @@ void ScheduleProductionLoop()
     }
     catch (boost::thread_interrupted)
     {
-        LogPrintf("Miner terminated");
+        LogPrintf("Miner terminated\n");
         throw;
     }
 }
@@ -148,7 +148,7 @@ void ScheduleProductionLoop()
 // minter thread
 void static ThreadMinter(void* parg)
 {
-    printf("ThreadMinter started\n");
+    LogPrintf("ThreadMinter started\n");
     try
     {
         ScheduleProductionLoop();
@@ -160,7 +160,7 @@ void static ThreadMinter(void* parg)
     } catch (...) {
         error(NULL, "ThreadMinter()");
     }
-    printf("ThreadMinter exiting\n");
+    LogPrintf("ThreadMinter exiting\n");
 }
 
 
