@@ -2,6 +2,7 @@
 #include <witness.h>
 #include <pubkey.h>
 #include <key_io.h>
+#include <base58.h>
 #include <wallet/wallet.h>
 #include <rpc/mining.h>
 
@@ -10,11 +11,36 @@
 int64_t block_interval=10;//10s
 int64_t new_round_begin_time=0;
 bool round_generated=false;
-CKeyID local_keyid;
-std::vector<CKeyID> witness_keys;
+uint160 local_address;
+std::vector<uint160> witness_keys;
 
-bool GreaterSort(CKeyID a,CKeyID b){
+bool GreaterSort(uint160 a,uint160 b){
     return a < b;
+}
+
+uint160 Address2uint160(const std::string& address)
+{
+    const CChainParams& params=Params();
+    std::vector<unsigned char> data;
+    uint160 hash;
+    if (DecodeBase58Check(address, data)) {
+        // base58-encoded Bitcoin addresses.
+        // Public-key-hash-addresses have version 0 (or 111 testnet).
+        // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
+        const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
+        if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix.begin(), pubkey_prefix.end(), data.begin())) {
+            std::copy(data.begin() + pubkey_prefix.size(), data.end(), hash.begin());
+            return hash;
+        }
+        // Script-hash-addresses have version 5 (or 196 testnet).
+        // The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
+        const std::vector<unsigned char>& script_prefix = params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
+        if (data.size() == hash.size() + script_prefix.size() && std::equal(script_prefix.begin(), script_prefix.end(), data.begin())) {
+            std::copy(data.begin() + script_prefix.size(), data.end(), hash.begin());
+            return hash;
+        }
+    }
+    return uint160();
 }
 
 bool GetLocalKeyID(CWallet* const pwallet)
@@ -23,16 +49,23 @@ bool GetLocalKeyID(CWallet* const pwallet)
     witness_keys.clear();
     for(auto &address:vWitnessAddresses)
     {
-        CTxDestination dest = DecodeDestination(address);
-        if (!IsValidDestination(dest)) {
-            continue;
+        uint160 u160addr = Address2uint160(address);
+        if (u160addr.IsNull()) {
+            LogPrintf("Error:address %s is invalid\n",address);
+            return false;
         }
+        witness_keys.push_back(u160addr);
+
+        CTxDestination dest = DecodeDestination(address);
         auto keyid = GetKeyForDestination(*pwallet, dest);
         if (keyid.IsNull()) {
             continue;
         }
-        local_keyid=keyid;
-        witness_keys.push_back(keyid);
+        CKey vchSecret;
+        if (!pwallet->GetKey(keyid, vchSecret)) {
+            continue;;
+        }
+        local_address=u160addr;
         find = true;
     }
     std::sort(witness_keys.begin(),witness_keys.end(),GreaterSort);
@@ -46,23 +79,24 @@ void MaybeProduceBlock(CWallet* const pwallet)
     int time_pass=GetTime()-new_round_begin_time;
     int index=time_pass/block_interval;
     if(index>=PRODUCE_NODE_COUNT){
-        LogPrintf("index > PRODUCE_NODE_COUNT");
+        LogPrintf("index > PRODUCE_NODE_COUNT\n");
         return;
     }
-    if(witness_keys[index]==local_keyid&&!round_generated)
+    if(witness_keys[index]==local_address&&!round_generated)
     {
+        LogPrintf("Info:Generate block,time pass:%d,index:%d\n",time_pass,index);
         std::shared_ptr<CReserveScript> coinbase_script;
         pwallet->GetScriptForMining(coinbase_script);
 
         // If the keypool is exhausted, no script is returned at all.  Catch this.
         if (!coinbase_script) {
-            LogPrintf("Error: Keypool ran out, please call keypoolrefill first");
+            LogPrintf("Error: Keypool ran out, please call keypoolrefill first\n");
             throw;
         }
 
         //throw an error if no script was provided
         if (coinbase_script->reserveScript.empty()) {
-            LogPrintf("No coinbase script available");
+            LogPrintf("No coinbase script available\n");
             throw;
         }
         generateBlocks(coinbase_script, 1, 100000, true);
@@ -77,12 +111,12 @@ void ScheduleProductionLoop()
     CWallet* const pwallet = wallet.get();
     if (!pwallet||!EnsureWalletIsAvailable(pwallet, false))
     {
-        LogPrintf("Wallet does not exist or is not loaded");
+        LogPrintf("Wallet does not exist or is not loaded\n");
         throw;
     }
     while(!GetLocalKeyID(pwallet))
     {
-        LogPrintf("Local witness address not find");
+        LogPrintf("Local witness address not find\n");
         MilliSleep(1000);
         continue;
     }
@@ -93,7 +127,7 @@ void ScheduleProductionLoop()
         {
             while (pwallet->IsLocked())
             {
-                LogPrintf("Info: Minting suspended due to locked wallet.");;
+                LogPrintf("Info: Minting suspended due to locked wallet.\n");;
                 MilliSleep(1000);
             }
             if((GetTime()%(PRODUCE_NODE_COUNT*block_interval))<5&&(GetTime()-new_round_begin_time>block_interval)){
@@ -106,7 +140,7 @@ void ScheduleProductionLoop()
     }
     catch (boost::thread_interrupted)
     {
-        LogPrintf("Miner terminated");
+        LogPrintf("Miner terminated\n");
         throw;
     }
 }
@@ -114,7 +148,7 @@ void ScheduleProductionLoop()
 // minter thread
 void static ThreadMinter(void* parg)
 {
-    printf("ThreadMinter started\n");
+    LogPrintf("ThreadMinter started\n");
     try
     {
         ScheduleProductionLoop();
@@ -126,7 +160,7 @@ void static ThreadMinter(void* parg)
     } catch (...) {
         error(NULL, "ThreadMinter()");
     }
-    printf("ThreadMinter exiting\n");
+    LogPrintf("ThreadMinter exiting\n");
 }
 
 
