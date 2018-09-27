@@ -7,11 +7,11 @@
 #include "omnicore/mdex.h"
 
 #include "amount.h"
-#include "main.h"
 #include "sync.h"
 #include "txmempool.h"
 #include "uint256.h"
 #include "ui_interface.h"
+#include "validation.h"
 
 #include <string>
 

@@ -10,6 +10,7 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "uint256.h"
+#include <key_io.h>
 
 #include <stdint.h>
 #include <string>
@@ -131,8 +132,8 @@ OmniTxBuilder& OmniTxBuilder::addInputs(const std::vector<PrevTxsEntry>& prevTxs
 /** Adds an output for the reference address. */
 OmniTxBuilder& OmniTxBuilder::addReference(const std::string& destination, int64_t value)
 {
-    CBitcoinAddress addr(destination);
-    CScript scriptPubKey = GetScriptForDestination(addr.Get());
+    CTxDestination dest = DecodeDestination(destination);
+    CScript scriptPubKey = GetScriptForDestination(dest);
 
     int64_t minValue = GetDustThreshold(scriptPubKey);
     value = std::max(minValue, value);
@@ -167,21 +168,20 @@ OmniTxBuilder& OmniTxBuilder::addMultisig(const std::vector<unsigned char>& data
 /** Adds an output for change. */
 OmniTxBuilder& OmniTxBuilder::addChange(const std::string& destination, const CCoinsViewCache& view, int64_t txFee, uint32_t position)
 {
-    CBitcoinAddress addr(destination);
+    CTxDestination dest = DecodeDestination(destination);
 
-    return (OmniTxBuilder&) TxBuilder::addChange(addr.Get(), view, txFee, position);
+    return (OmniTxBuilder&) TxBuilder::addChange(dest, view, txFee, position);
 }
 
 /** Adds previous transaction outputs to coins view. */
 void InputsToView(const std::vector<PrevTxsEntry>& prevTxs, CCoinsViewCache& view)
 {
     for (std::vector<PrevTxsEntry>::const_iterator it = prevTxs.begin(); it != prevTxs.end(); ++it) {
-        CCoinsModifier coins = view.ModifyCoins(it->outPoint.hash);
-        if ((size_t) it->outPoint.n >= coins->vout.size()) {
-            coins->vout.resize(it->outPoint.n+1);
-        }
-        coins->vout[it->outPoint.n].scriptPubKey = it->txOut.scriptPubKey;
-        coins->vout[it->outPoint.n].nValue = it->txOut.nValue;
+        Coin newcoin;
+        newcoin.out.scriptPubKey = it->txOut.scriptPubKey;
+        newcoin.out.nValue = it->txOut.nValue;
+        newcoin.nHeight = 1;
+        view.AddCoin(it->outPoint, std::move(newcoin), true);
     }
 }
 

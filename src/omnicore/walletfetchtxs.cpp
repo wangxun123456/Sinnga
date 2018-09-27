@@ -15,10 +15,11 @@
 #include "omnicore/utilsbitcoin.h"
 
 #include "init.h"
-#include "main.h"
+#include "validation.h"
 #include "sync.h"
 #include "tinyformat.h"
 #include "txdb.h"
+#include "index/txindex.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
@@ -43,7 +44,7 @@ static unsigned int GetTransactionByteOffset(const uint256& txid)
     LOCK(cs_main);
 
     CDiskTxPos position;
-    if (pblocktree->ReadTxIndex(txid, position)) {
+    if (pblocktree->Read(std::make_pair(DB_TXINDEX, txid), position)) {
         return position.nTxOffset;
     }
 
@@ -58,8 +59,9 @@ static unsigned int GetTransactionByteOffset(const uint256& txid)
 std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, int startBlock, int endBlock)
 {
     std::map<std::string, uint256> mapResponse;
+#if 0   // TODO zhangzf
 #ifdef ENABLE_WALLET
-    if (pwalletMain == NULL) {
+    if (HasWallets()) {
         return mapResponse;
     }
     std::set<uint256> seenHashes;
@@ -136,6 +138,8 @@ std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, i
         std::string sortKey = strprintf("%06d%010d", blockHeight, blockPosition);
         mapResponse.insert(std::make_pair(sortKey, txHash));
     }
+#endif
+
 #endif
     return mapResponse;
 }

@@ -95,11 +95,11 @@ extern std::atomic<bool> fReopenOmniCoreLog;
 static boost::filesystem::path GetLogPath()
 {
     boost::filesystem::path pathLogFile;
-    std::string strLogPath = GetArg("-omnilogfile", "");
+    std::string strLogPath = gArgs.GetArg("-omnilogfile", "");
 
     if (!strLogPath.empty()) {
         pathLogFile = boost::filesystem::path(strLogPath);
-        TryCreateDirectory(pathLogFile.parent_path());
+        TryCreateDirectories(pathLogFile.parent_path());
     } else {
         pathLogFile = GetDataDir() / LOG_FILENAME;
     }
@@ -132,7 +132,7 @@ static void DebugLogInit()
  */
 static std::string GetTimestamp()
 {
-    return DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime());
+    return FormatISO8601DateTime(GetTime());
 }
 
 /**
@@ -150,11 +150,11 @@ static std::string GetTimestamp()
 int LogFilePrint(const std::string& str)
 {
     int ret = 0; // Number of characters written
-    if (fPrintToConsole) {
+    if (g_logger->m_print_to_console) {
         // Print to console
         ret = ConsolePrint(str);
     }
-    else if (fPrintToDebugLog && AreBaseParamsConfigured()) {
+    else if (g_logger->m_print_to_file) {
         static bool fStartedNewLine = true;
         boost::call_once(&DebugLogInit, debugLogInitFlag);
 
@@ -173,7 +173,7 @@ int LogFilePrint(const std::string& str)
         }
 
         // Printing log timestamps can be useful for profiling
-        if (fLogTimestamps && fStartedNewLine) {
+        if (g_logger->m_log_timestamps && fStartedNewLine) {
             ret += fprintf(fileout, "%s ", GetTimestamp().c_str());
         }
         if (!str.empty() && str[str.size()-1] == '\n') {
@@ -201,7 +201,7 @@ int ConsolePrint(const std::string& str)
     int ret = 0; // Number of characters written
     static bool fStartedNewLine = true;
 
-    if (fLogTimestamps && fStartedNewLine) {
+    if (g_logger->m_log_timestamps && fStartedNewLine) {
         ret = fprintf(stdout, "%s %s", GetTimestamp().c_str(), str.c_str());
     } else {
         ret = fwrite(str.data(), 1, str.size(), stdout);
@@ -226,11 +226,11 @@ int ConsolePrint(const std::string& str)
  */
 void InitDebugLogLevels()
 {
-    if (!mapArgs.count("-omnidebug")) {
+    if (!gArgs.IsArgSet("-omnidebug")) {
         return;
     }
 
-    const std::vector<std::string>& debugLevels = mapMultiArgs["-omnidebug"];
+    const std::vector<std::string>& debugLevels = gArgs.GetArgs("-omnidebug");
 
     for (std::vector<std::string>::const_iterator it = debugLevels.begin(); it != debugLevels.end(); ++it) {
         if (*it == "parser_data") msc_debug_parser_data = true;

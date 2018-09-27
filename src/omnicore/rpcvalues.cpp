@@ -12,6 +12,7 @@
 #include "rpc/server.h"
 #include "script/script.h"
 #include "uint256.h"
+#include "key_io.h"
 
 #include <univalue.h>
 
@@ -25,11 +26,11 @@ using mastercore::StrToInt64;
 
 std::string ParseAddress(const UniValue& value)
 {
-    CBitcoinAddress address(value.get_str());
-    if (!address.IsValid()) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+    CTxDestination dest = DecodeDestination(value.get_str());
+    if (IsValidDestination(dest)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest");
     }
-    return address.ToString();
+    return EncodeDestination(dest);
 }
 
 std::string ParseAddressOrEmpty(const UniValue& value)
@@ -173,7 +174,7 @@ uint8_t ParseMetaDExAction(const UniValue& value)
 
 CTransaction ParseTransaction(const UniValue& value)
 {
-    CTransaction tx;
+    CMutableTransaction tx;
     if (value.isNull() || value.get_str().empty()) {
         return tx;
     }

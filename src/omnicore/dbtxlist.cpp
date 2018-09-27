@@ -11,12 +11,12 @@
 
 #include "chain.h"
 #include "chainparams.h"
-#include "main.h"
 #include "sync.h"
 #include "tinyformat.h"
 #include "uint256.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include <validation.h>
 
 #include "leveldb/iterator.h"
 #include "leveldb/slice.h"
@@ -491,7 +491,7 @@ void CMPTxList::LoadAlerts(int blockHeight)
     for (std::vector<std::pair<int64_t, uint256> >::iterator it = loadOrder.begin(); it != loadOrder.end(); ++it) {
         uint256 txid = (*it).second;
         uint256 blockHash;
-        CTransaction wtx;
+        CTransactionRef wtx;
         CMPTransaction mp_obj;
         if (!GetTransaction(txid, wtx, Params().GetConsensus(), blockHash, true)) {
             PrintToLog("ERROR: While loading alert %s: tx in levelDB but does not exist.\n", txid.GetHex());
@@ -503,7 +503,7 @@ void CMPTxList::LoadAlerts(int blockHeight)
             // skipping, because it's in the future
             continue;
         }
-        if (0 != ParseTransaction(wtx, blockHeight, 0, mp_obj)) {
+        if (0 != ParseTransaction(*wtx, blockHeight, 0, mp_obj)) {
             PrintToLog("ERROR: While loading alert %s: failed ParseTransaction.\n", txid.GetHex());
             continue;
         }
@@ -567,7 +567,7 @@ void CMPTxList::LoadActivations(int blockHeight)
     for (std::vector<std::pair<int64_t, uint256> >::iterator it = loadOrder.begin(); it != loadOrder.end(); ++it) {
         uint256 hash = (*it).second;
         uint256 blockHash;
-        CTransaction wtx;
+        CTransactionRef wtx;
         CMPTransaction mp_obj;
 
         if (!GetTransaction(hash, wtx, Params().GetConsensus(), blockHash, true)) {
@@ -588,7 +588,7 @@ void CMPTxList::LoadActivations(int blockHeight)
             // skipping, because it's in the future
             continue;
         }
-        if (0 != ParseTransaction(wtx, currentBlockHeight, 0, mp_obj)) {
+        if (0 != ParseTransaction(*wtx, currentBlockHeight, 0, mp_obj)) {
             PrintToLog("ERROR: While loading activation transaction %s: failed ParseTransaction.\n", hash.GetHex());
             continue;
         }
@@ -610,7 +610,7 @@ void CMPTxList::LoadActivations(int blockHeight)
     CheckLiveActivations(blockHeight);
 
     // This alert never expires as long as custom activations are used
-    if (mapArgs.count("-omniactivationallowsender") || mapArgs.count("-omniactivationignoresender")) {
+    if (gArgs.IsArgSet("-omniactivationallowsender") || gArgs.IsArgSet("-omniactivationignoresender")) {
         AddAlert("omnicore", ALERT_CLIENT_VERSION_EXPIRY, std::numeric_limits<uint32_t>::max(),
                 "Authorization for feature activation has been modified.  Data provided by this client should not be trusted.");
     }
@@ -647,7 +647,7 @@ bool CMPTxList::LoadFreezeState(int blockHeight)
     for (std::vector<std::pair<std::string, uint256> >::iterator it = loadOrder.begin(); it != loadOrder.end(); ++it) {
         uint256 hash = (*it).second;
         uint256 blockHash;
-        CTransaction wtx;
+        CTransactionRef wtx;
         CMPTransaction mp_obj;
         if (!GetTransaction(hash, wtx, Params().GetConsensus(), blockHash, true)) {
             PrintToLog("ERROR: While loading freeze transaction %s: tx in levelDB but does not exist.\n", hash.GetHex());
@@ -667,7 +667,7 @@ bool CMPTxList::LoadFreezeState(int blockHeight)
             // skipping, because it's in the future
             continue;
         }
-        if (0 != ParseTransaction(wtx, currentBlockHeight, 0, mp_obj)) {
+        if (0 != ParseTransaction(*wtx, currentBlockHeight, 0, mp_obj)) {
             PrintToLog("ERROR: While loading freeze transaction %s: failed ParseTransaction.\n", hash.GetHex());
             return false;
         }

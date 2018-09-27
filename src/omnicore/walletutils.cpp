@@ -8,9 +8,9 @@
 
 #include "amount.h"
 #include "base58.h"
-#include "coincontrol.h"
+#include "wallet/coincontrol.h"
 #include "init.h"
-#include "main.h"
+#include "validation.h"
 #include "pubkey.h"
 #include "script/standard.h"
 #include "sync.h"
@@ -34,10 +34,11 @@ namespace mastercore
  */
 bool AddressToPubKey(const std::string& key, CPubKey& pubKey)
 {
+#if 0   // TODO zhangzf
 #ifdef ENABLE_WALLET
     // Case 1: Bitcoin address and the key is in the wallet
-    CBitcoinAddress address(key);
-    if (pwalletMain && address.IsValid()) {
+    CTxDestination dest(key);
+    if (pwalletMain && IsValidDestination(dest)) {
         CKeyID keyID;
         if (!address.GetKeyID(keyID)) {
             PrintToLog("%s() ERROR: redemption address %s does not refer to a public key\n", __func__, key);
@@ -60,6 +61,7 @@ bool AddressToPubKey(const std::string& key, CPubKey& pubKey)
         return false;
     }
 
+#endif
     return true;
 }
 
@@ -68,6 +70,7 @@ bool AddressToPubKey(const std::string& key, CPubKey& pubKey)
  */
 bool CheckFee(const std::string& fromAddress, size_t nDataSize)
 {
+#if 0   // TODO zhangzf
     int64_t minFee = 0;
     int64_t feePerKB = 0;
     int64_t inputTotal = 0;
@@ -101,6 +104,8 @@ bool CheckFee(const std::string& fromAddress, size_t nDataSize)
     }
 #endif
     return inputTotal >= minFee;
+#endif
+    return true; //del
 }
 
 /**
@@ -128,6 +133,7 @@ bool CheckInput(const CTxOut& txOut, int nHeight, CTxDestination& dest)
  */
 std::string GetAddressLabel(const std::string& address)
 {
+#if 0
     std::string addressLabel;
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
@@ -141,6 +147,8 @@ std::string GetAddressLabel(const std::string& address)
     }
 #endif
     return addressLabel;
+#endif
+    return "";
 }
 
 /**
@@ -148,6 +156,7 @@ std::string GetAddressLabel(const std::string& address)
  */
 int IsMyAddress(const std::string& address)
 {
+#if 0
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         // TODO: resolve deadlock caused cs_tally, cs_wallet
@@ -157,6 +166,7 @@ int IsMyAddress(const std::string& address)
 
         return static_cast<int>(isMine);
     }
+#endif
 #endif
     return 0;
 }
@@ -169,11 +179,14 @@ int IsMyAddress(const std::string& address)
 static int64_t GetEstimatedFeePerKb()
 {
     int64_t nFee = 50000; // 0.0005 BTC;
+#if 0
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         nFee = pwalletMain->GetMinimumFee(1000, nTxConfirmTarget, mempool);
     }
+#endif
+
 #endif
 
     return nFee;
@@ -188,6 +201,7 @@ static int64_t GetEstimatedFeePerKb()
  */
 static int64_t GetEconomicThreshold(const CTxOut& txOut)
 {
+#if 0   // TODO zhangzf
     // Minimum value needed to relay the transaction
     int64_t nThresholdDust = txOut.GetDustThreshold(minRelayTxFee);
 
@@ -198,6 +212,8 @@ static int64_t GetEconomicThreshold(const CTxOut& txOut)
     int64_t nThresholdFees = txOut.GetDustThreshold(estimatedFeeRate) / 3;
 
     return std::max(nThresholdDust, nThresholdFees);
+#endif
+    return 0;   //del
 }
 
 /**
@@ -205,6 +221,7 @@ static int64_t GetEconomicThreshold(const CTxOut& txOut)
  */
 int64_t SelectCoins(const std::string& fromAddress, CCoinControl& coinControl, int64_t additional)
 {
+#if 0 // TODO zhangzf
     // total output funds collected
     int64_t nTotal = 0;
 
@@ -277,6 +294,8 @@ int64_t SelectCoins(const std::string& fromAddress, CCoinControl& coinControl, i
 #endif
 
     return nTotal;
+#endif 
+    return 0; //del
 }
 
 /**
@@ -284,6 +303,7 @@ int64_t SelectCoins(const std::string& fromAddress, CCoinControl& coinControl, i
  */
 int64_t SelectAllCoins(const std::string& fromAddress, CCoinControl& coinControl)
 {
+#if 0   // TODO zhangzf
     // total output funds collected
     int64_t nTotal = 0;
 
@@ -341,6 +361,8 @@ int64_t SelectAllCoins(const std::string& fromAddress, CCoinControl& coinControl
 #endif
 
     return nTotal;
+#endif 
+    return 0; //del
 }
 
 

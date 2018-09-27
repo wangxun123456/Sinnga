@@ -64,6 +64,10 @@
         <file alias="omni_meta_partfilled">res/icons/meta_partfilled.png</file>
         <file alias="omni_meta_pending">res/icons/meta_pending.png</file>
         <file alias="omni_hourglass">res/icons/omni_hourglass.png</file>
+        <file alias="hd_enabled">res/icons/hd_enabled.png</file>
+        <file alias="hd_disabled">res/icons/hd_disabled.png</file>
+        <file alias="network_disabled">res/icons/network_disabled.png</file>
+        <file alias="proxy">res/icons/proxy.png</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="splash">res/images/splash.png</file>

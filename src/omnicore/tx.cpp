@@ -22,7 +22,7 @@
 
 #include "amount.h"
 #include "base58.h"
-#include "main.h"
+#include "validation.h"
 #include "sync.h"
 #include "utiltime.h"
 
@@ -536,7 +536,7 @@ bool CMPTransaction::interpret_CreatePropertyVariable()
         PrintToLog("\t            data: %s\n", data);
         PrintToLog("\tproperty desired: %d (%s)\n", property, strMPProperty(property));
         PrintToLog("\t tokens per unit: %s\n", FormatByType(nValue, prop_type));
-        PrintToLog("\t        deadline: %s (%x)\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", deadline), deadline);
+        PrintToLog("\t        deadline: %s (%x)\n", FormatISO8601DateTime(deadline), deadline);
         PrintToLog("\tearly bird bonus: %d\n", early_bird);
         PrintToLog("\t    issuer bonus: %d\n", percentage);
     }
@@ -726,8 +726,8 @@ bool CMPTransaction::interpret_FreezeTokens()
     if (receiver.empty()) {
         return false;
     }
-    CBitcoinAddress recAddress(receiver);
-    if (!recAddress.IsValid()) {
+    CTxDestination destination = DecodeDestination(receiver);
+    if (!IsValidDestination(destination)) {
         return false;
     }
 
@@ -765,8 +765,8 @@ bool CMPTransaction::interpret_UnfreezeTokens()
     if (receiver.empty()) {
         return false;
     }
-    CBitcoinAddress recAddress(receiver);
-    if (!recAddress.IsValid()) {
+    CTxDestination destination = DecodeDestination(receiver);
+    if (!IsValidDestination(destination)) {
         return false;
     }
 
@@ -2441,7 +2441,7 @@ int CMPTransaction::logicMath_Alert()
             std::string msgText = "Client upgrade is required!  Shutting down due to unsupported consensus state!";
             PrintToLog(msgText);
             PrintToConsole(msgText);
-            if (!GetBoolArg("-overrideforcedshutdown", false)) {
+            if (!gArgs.GetArg("-overrideforcedshutdown", false)) {
                 boost::filesystem::path persistPath = GetDataDir() / "MP_persist";
                 if (boost::filesystem::exists(persistPath)) boost::filesystem::remove_all(persistPath); // prevent the node being restarted without a reparse after forced shutdown
                 AbortNode(msgText, msgText);

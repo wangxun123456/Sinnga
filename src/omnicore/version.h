@@ -12,16 +12,16 @@
 //
 
 // Increase with every consensus affecting change
-#define OMNICORE_VERSION_MAJOR       0
+#define CLIENT_VERSION_MAJOR       0
 
 // Increase with every non-consensus affecting feature
-#define OMNICORE_VERSION_MINOR       3
+#define CLIENT_VERSION_MINOR       3
 
 // Increase with every patch, which is not a feature or consensus affecting
-#define OMNICORE_VERSION_PATCH       1
+#define CLIENT_VERSION_REVISION     1
 
 // Non-public build number/revision (usually zero)
-#define OMNICORE_VERSION_BUILD       0
+#define CLIENT_VERSION_BUILD       0
 
 #endif // HAVE_CONFIG_H
 
@@ -37,10 +37,10 @@
 
 //! Omni Core client version
 static const int OMNICORE_VERSION =
-                    +100000000000 * OMNICORE_VERSION_MAJOR
-                    +    10000000 * OMNICORE_VERSION_MINOR
-                    +        1000 * OMNICORE_VERSION_PATCH
-                    +           1 * OMNICORE_VERSION_BUILD;
+                    +100000000000 * CLIENT_VERSION_MAJOR
+                    +    10000000 * CLIENT_VERSION_MINOR
+                    +        1000 * CLIENT_VERSION_REVISION
+                    +           1 * CLIENT_VERSION_BUILD;
 
 //! Returns formatted Omni Core version, e.g. "1.2.0"
 const std::string OmniCoreVersion();

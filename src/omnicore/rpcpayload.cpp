@@ -680,6 +680,8 @@ UniValue omni_createpayload_unfreeze(const UniValue& params, bool fHelp)
 
 static const CRPCCommand commands[] =
 { //  category                         name                                      actor (function)                         okSafeMode
+    // TODO zhangzf
+#if 0
   //  -------------------------------- ----------------------------------------- ---------------------------------------- ----------
     { "omni layer (payload creation)", "omni_createpayload_simplesend",          &omni_createpayload_simplesend,          true },
     { "omni layer (payload creation)", "omni_createpayload_sendall",             &omni_createpayload_sendall,             true },
@@ -701,6 +703,7 @@ static const CRPCCommand commands[] =
     { "omni layer (payload creation)", "omni_createpayload_disablefreezing",     &omni_createpayload_disablefreezing,     true },
     { "omni layer (payload creation)", "omni_createpayload_freeze",              &omni_createpayload_freeze,              true },
     { "omni layer (payload creation)", "omni_createpayload_unfreeze",            &omni_createpayload_unfreeze,            true },
+#endif
 };
 
 void RegisterOmniPayloadCreationRPCCommands(CRPCTable &tableRPC)

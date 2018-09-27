@@ -15,8 +15,8 @@
 #include "omnicore/version.h"
 
 #include "chainparams.h"
-#include "main.h"
 #include "script/standard.h"
+#include "validation.h"
 #include "uint256.h"
 #include "ui_interface.h"
 

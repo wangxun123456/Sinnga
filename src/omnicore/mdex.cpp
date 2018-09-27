@@ -13,9 +13,10 @@
 
 #include "arith_uint256.h"
 #include "chain.h"
-#include "main.h"
 #include "tinyformat.h"
 #include "uint256.h"
+
+#include <validation.h>
 
 #include <univalue.h>
 

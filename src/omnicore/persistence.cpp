@@ -16,10 +16,10 @@
 #include "omnicore/utilsbitcoin.h"
 
 #include "chain.h"
-#include "main.h"
 #include "tinyformat.h"
 #include "uint256.h"
 #include "util.h"
+#include "validation.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>

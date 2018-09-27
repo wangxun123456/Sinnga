@@ -1,11 +1,14 @@
-Bitcoin Core version 0.13.2 is now available from:
+(note: this is a temporary file, to be added-to by anybody, and moved to
+release-notes at release time)
 
-  <https://bitcoin.org/bin/bitcoin-core-0.13.2/>
+Bitcoin Core version *version* is now available from:
 
-This is a new minor version release, including various bugfixes and
-performance improvements, as well as updated translations.
+  <https://bitcoincore.org/bin/bitcoin-core-*version*/>
 
-Please report bugs using the issue tracker at github:
+This is a new major version release, including new features, various bugfixes
+and performance improvements, as well as updated translations.
+
+Please report bugs using the issue tracker at GitHub:
 
   <https://github.com/bitcoin/bitcoin/issues>
 
@@ -13,166 +16,257 @@ To receive security and update notifications, please subscribe to:
 
   <https://bitcoincore.org/en/list/announcements/join/>
 
+How to Upgrade
+==============
+
+If you are running an older version, shut it down. Wait until it has completely
+shut down (which might take a few minutes for older versions), then run the
+installer (on Windows) or just copy over `/Applications/Bitcoin-Qt` (on Mac)
+or `bitcoind`/`bitcoin-qt` (on Linux).
+
+The first time you run version 0.15.0, your chainstate database will be converted to a
+new format, which will take anywhere from a few minutes to half an hour,
+depending on the speed of your machine.
+
+Note that the block database format also changed in version 0.8.0 and there is no
+automatic upgrade code from before version 0.8 to version 0.15.0. Upgrading
+directly from 0.7.x and earlier without redownloading the blockchain is not supported.
+However, as usual, old wallet versions are still supported.
+
+Downgrading warning
+-------------------
+
+The chainstate database for this release is not compatible with previous
+releases, so if you run 0.15 and then decide to switch back to any
+older version, you will need to run the old release with the `-reindex-chainstate`
+option to rebuild the chainstate data structures in the old format.
+
+If your node has pruning enabled, this will entail re-downloading and
+processing the entire blockchain.
+
 Compatibility
 ==============
 
-Microsoft ended support for Windows XP on [April 8th, 2014](https://www.microsoft.com/en-us/WindowsForBusiness/end-of-xp-support),
-an OS initially released in 2001. This means that not even critical security
-updates will be released anymore. Without security updates, using a bitcoin
-wallet on a XP machine is irresponsible at least.
+Bitcoin Core is extensively tested on multiple operating systems using
+the Linux kernel, macOS 10.10+, and Windows 7 and newer (Windows XP is not supported).
 
-In addition to that, with 0.12.x there have been varied reports of Bitcoin Core
-randomly crashing on Windows XP. It is [not clear](https://github.com/bitcoin/bitcoin/issues/7681#issuecomment-217439891)
-what the source of these crashes is, but it is likely that upstream
-libraries such as Qt are no longer being tested on XP.
+Bitcoin Core should also work on most other Unix-like systems but is not
+frequently tested on them.
 
-We do not have time nor resources to provide support for an OS that is
-end-of-life. From 0.13.0 on, Windows XP is no longer supported. Users are
-suggested to upgrade to a newer version of Windows, or install an alternative OS
-that is supported.
-
-No attempt is made to prevent installing or running the software on Windows XP,
-you can still do so at your own risk, but do not expect it to work: do not
-report issues about Windows XP to the issue tracker.
-
-From 0.13.1 onwards OS X 10.7 is no longer supported. 0.13.0 was intended to work on 10.7+, 
-but severe issues with the libc++ version on 10.7.x keep it from running reliably. 
-0.13.1 now requires 10.8+, and will communicate that to 10.7 users, rather than crashing unexpectedly.
+From 0.17.0 onwards macOS <10.10 is no longer supported. 0.17.0 is built using Qt 5.9.x, which doesn't
+support versions of macOS older than 10.10.
 
 Notable changes
 ===============
 
-Change to wallet handling of mempool rejection
------------------------------------------------
+Changed command-line options
+----------------------------
 
-When a newly created transaction failed to enter the mempool due to
-the limits on chains of unconfirmed transactions the sending RPC
-calls would return an error.  The transaction would still be queued
-in the wallet and, once some of the parent transactions were
-confirmed, broadcast after the software was restarted.
+- `-includeconf=<file>` can be used to include additional configuration files.
+  Only works inside the `bitcoin.conf` file, not inside included files or from
+  command-line. Multiple files may be included. Can be disabled from command-
+  line via `-noincludeconf`. Note that multi-argument commands like
+  `-includeconf` will override preceding `-noincludeconf`, i.e.
 
-This behavior has been changed to return success and to reattempt
-mempool insertion at the same time transaction rebroadcast is
-attempted, avoiding a need for a restart.
+    noincludeconf=1
+    includeconf=relative.conf
 
-Transactions in the wallet which cannot be accepted into the mempool
-can be abandoned with the previously existing abandontransaction RPC
-(or in the GUI via a context menu on the transaction).
+  as bitcoin.conf will still include `relative.conf`.
 
+GUI changes
+-----------
 
-0.13.2 Change log
-=================
+- Block storage can be limited under Preferences, in the Main tab. Undoing this setting requires downloading the full blockchain again. This mode is incompatible with -txindex and -rescan.
 
-Detailed release notes follow. This overview includes changes that affect
-behavior, not code moves, refactors and string updates. For convenience in locating
-the code changes and accompanying discussion, both the pull request and
-git merge commit are mentioned.
+RPC changes
+------------
 
-### Consensus
-- #9293 `e591c10` [0.13 Backport #9053] IBD using chainwork instead of height and not using header timestamp (gmaxwell)
-- #9053 `5b93eee` IBD using chainwork instead of height and not using header timestamps (gmaxwell)
+### Low-level changes
 
-### RPC and other APIs
-- #8845 `1d048b9` Don't return the address of a P2SH of a P2SH (jnewbery)
-- #9041 `87fbced` keypoololdest denote Unix epoch, not GMT (s-matthew-english)
-- #9122 `f82c81b` fix getnettotals RPC description about timemillis (visvirial)
-- #9042 `5bcb05d` [rpc] ParseHash: Fail when length is not 64 (MarcoFalke)
-- #9194 `f26dab7` Add option to return non-segwit serialization via rpc (instagibbs)
-- #9347 `b711390` [0.13.2] wallet/rpc backports (MarcoFalke)
-- #9292 `c365556` Complain when unknown rpcserialversion is specified (sipa)
-- #9322 `49a612f` [qa] Don't set unknown rpcserialversion (MarcoFalke)
+- The `createrawtransaction` RPC will now accept an array or dictionary (kept for compatibility) for the `outputs` parameter. This means the order of transaction outputs can be specified by the client.
+- The `fundrawtransaction` RPC will reject the previously deprecated `reserveChangeKey` option.
+- `sendmany` now shuffles outputs to improve privacy, so any previously expected behavior with regards to output ordering can no longer be relied upon.
+- The new RPC `testmempoolaccept` can be used to test acceptance of a transaction to the mempool without adding it.
+- JSON transaction decomposition now includes a `weight` field which provides
+  the transaction's exact weight. This is included in REST /rest/tx/ and
+  /rest/block/ endpoints when in json mode. This is also included in `getblock`
+  (with verbosity=2), `listsinceblock`, `listtransactions`, and
+  `getrawtransaction` RPC commands.
+- New `fees` field introduced in `getrawmempool`, `getmempoolancestors`, `getmempooldescendants` and
+   `getmempoolentry` when verbosity is set to `true` with sub-fields `ancestor`, `base`, `modified`
+   and `descendant` denominated in BTC. This new field deprecates previous fee fields, such as
+   `fee`, `modifiedfee`, `ancestorfee` and `descendantfee`.
+- The new RPC `getzmqnotifications` returns information about active ZMQ
+  notifications.
 
-### Block and transaction handling
-- #8357 `ce0d817` [mempool] Fix relaypriority calculation error (maiiz)
-- #9267 `0a4aa87` [0.13 backport #9239] Disable fee estimates for a confirm target of 1 block (morcos)
-- #9196 `0c09d9f` Send tip change notification from invalidateblock (ryanofsky)
+External wallet files
+---------------------
 
-### P2P protocol and network code
-- #8995 `9ef3875` Add missing cs_main lock to ::GETBLOCKTXN processing (TheBlueMatt)
-- #9234 `94531b5` torcontrol: Explicitly request RSA1024 private key (laanwj)
-- #8637 `2cad5db` Compact Block Tweaks (rebase of #8235) (sipa)
-- #9058 `286e548` Fixes for p2p-compactblocks.py test timeouts on travis (#8842) (ryanofsky)
-- #8865 `4c71fc4` Decouple peer-processing-logic from block-connection-logic (TheBlueMatt)
-- #9117 `6fe3981` net: don't send feefilter messages before the version handshake is complete (theuni)
-- #9188 `ca1fd75` Make orphan parent fetching ask for witnesses (gmaxwell)
-- #9052 `3a3bcbf` Use RelevantServices instead of node_network in AttemptToEvict (gmaxwell)
-- #9048 `9460771` [0.13 backport #9026] Fix handling of invalid compact blocks (sdaftuar)
-- #9357 `03b6f62` [0.13 backport #9352] Attempt reconstruction from all compact block announcements (sdaftuar)
-- #9189 `b96a8f7` Always add default_witness_commitment with GBT client support (sipa)
-- #9253 `28d0f22` Fix calculation of number of bound sockets to use (TheBlueMatt)
-- #9199 `da5a16b` Always drop the least preferred HB peer when adding a new one (gmaxwell)
+The `-wallet=<path>` option now accepts full paths instead of requiring wallets
+to be located in the -walletdir directory.
 
-### Build system
-- #9169 `d1b4da9` build: fix qt5.7 build under macOS (theuni)
-- #9326 `a0f7ece` Update for OpenSSL 1.1 API (gmaxwell)
-- #9224 `396c405` Prevent FD_SETSIZE error building on OpenBSD (ivdsangen)
+Newly created wallet format
+---------------------------
 
-### GUI
-- #8972 `6f86b53` Make warnings label selectable (jonasschnelli) (MarcoFalke)
-- #9185 `6d70a73` Fix coincontrol sort issue (jonasschnelli)
-- #9094 `5f3a12c` Use correct conversion function for boost::path datadir (laanwj)
-- #8908 `4a974b2` Update bitcoin-qt.desktop (s-matthew-english)
-- #9190 `dc46b10` Plug many memory leaks (laanwj)
+If `-wallet=<path>` is specified with a path that does not exist, it will now
+create a wallet directory at the specified location (containing a wallet.dat
+data file, a db.log file, and database/log.?????????? files) instead of just
+creating a data file at the path and storing log files in the parent
+directory. This should make backing up wallets more straightforward than
+before because the specified wallet path can just be directly archived without
+having to look in the parent directory for transaction log files.
 
-### Wallet
-- #9290 `35174a0` Make RelayWalletTransaction attempt to AcceptToMemoryPool (gmaxwell)
-- #9295 `43bcfca` Bugfix: Fundrawtransaction: don't terminate when keypool is empty (jonasschnelli)
-- #9302 `f5d606e` Return txid even if ATMP fails for new transaction (sipa)
-- #9262 `fe39f26` Prefer coins that have fewer ancestors, sanity check txn before ATMP (instagibbs)
+For backwards compatibility, wallet paths that are names of existing data files
+in the `-walletdir` directory will continue to be accepted and interpreted the
+same as before.
 
-### Tests and QA
-- #9159 `eca9b46` Wait for specific block announcement in p2p-compactblocks (ryanofsky)
-- #9186 `dccdc3a` Fix use-after-free in scheduler tests (laanwj)
-- #9168 `3107280` Add assert_raises_message to check specific error message (mrbandrews)
-- #9191 `29435db` 0.13.2 Backports (MarcoFalke)
-- #9077 `1d4c884` Increase wallet-dump RPC timeout (ryanofsky)
-- #9098 `ecd7db5` Handle zombies and cluttered tmpdirs (MarcoFalke)
-- #8927 `387ec9d` Add script tests for FindAndDelete in pre-segwit and segwit scripts (jl2012)
-- #9200 `eebc699` bench: Fix subtle counting issue when rescaling iteration count (laanwj)
+Dynamic loading and creation of wallets
+---------------------------------------
 
-### Miscellaneous
-- #8838 `094848b` Calculate size and weight of block correctly in CreateNewBlock() (jnewbery)
-- #8920 `40169dc` Set minimum required Boost to 1.47.0 (fanquake)
-- #9251 `a710a43` Improvement of documentation of command line parameter 'whitelist' (wodry)
-- #8932 `106da69` Allow bitcoin-tx to create v2 transactions (btcdrak)
-- #8929 `12428b4` add software-properties-common (sigwo)
-- #9120 `08d1c90` bug: Missed one "return false" in recent refactoring in #9067 (UdjinM6)
-- #9067 `f85ee01` Fix exit codes (UdjinM6)
-- #9340 `fb987b3` [0.13] Update secp256k1 subtree (MarcoFalke)
-- #9229 `b172377` Remove calls to getaddrinfo_a (TheBlueMatt)
+Previously, wallets could only be loaded or created at startup, by specifying `-wallet` parameters on the command line or in the bitcoin.conf file. It is now possible to load, create and unload wallets dynamically at runtime:
+
+- Existing wallets can be loaded by calling the `loadwallet` RPC. The wallet can be specified as file/directory basename (which must be located in the `walletdir` directory), or as an absolute path to a file/directory.
+- New wallets can be created (and loaded) by calling the `createwallet` RPC. The provided name must not match a wallet file in the `walletdir` directory or the name of a wallet that is currently loaded.
+- Loaded wallets can be unloaded by calling the `unloadwallet` RPC.
+
+This feature is currently only available through the RPC interface.
+
+Coin selection
+--------------
+- A new `-avoidpartialspends` flag has been added (default=false). If enabled, the wallet will try to spend UTXO's that point at the same destination
+  together. This is a privacy increase, as there will no longer be cases where a wallet will inadvertently spend only parts of the coins sent to
+  the same address (note that if someone were to send coins to that address after it was used, those coins will still be included in future
+  coin selections).
+
+Configuration sections for testnet and regtest
+----------------------------------------------
+
+It is now possible for a single configuration file to set different
+options for different networks. This is done by using sections or by
+prefixing the option with the network, such as:
+
+    main.uacomment=bitcoin
+    test.uacomment=bitcoin-testnet
+    regtest.uacomment=regtest
+    [main]
+    mempoolsize=300
+    [test]
+    mempoolsize=100
+    [regtest]
+    mempoolsize=20
+
+The `addnode=`, `connect=`, `port=`, `bind=`, `rpcport=`, `rpcbind=`
+and `wallet=` options will only apply to mainnet when specified in the
+configuration file, unless a network is specified.
+
+'label' and 'account' APIs for wallet
+-------------------------------------
+
+A new 'label' API has been introduced for the wallet. This is intended as a
+replacement for the deprecated 'account' API. The 'account' can continue to
+be used in V0.17 by starting bitcoind with the '-deprecatedrpc=accounts'
+argument, and will be fully removed in V0.18.
+
+The label RPC methods mirror the account functionality, with the following functional differences:
+
+- Labels can be set on any address, not just receiving addresses. This functionality was previously only available through the GUI.
+- Labels can be deleted by reassigning all addresses using the `setlabel` RPC method.
+- There isn't support for sending transactions _from_ a label, or for determining which label a transaction was sent from.
+- Labels do not have a balance.
+
+Here are the changes to RPC methods:
+
+| Deprecated Method       | New Method            | Notes       |
+| :---------------------- | :-------------------- | :-----------|
+| `getaccount`            | `getaddressinfo`      | `getaddressinfo` returns a json object with address information instead of just the name of the account as a string. |
+| `getaccountaddress`     | n/a                   | There is no replacement for `getaccountaddress` since labels do not have an associated receive address. |
+| `getaddressesbyaccount` | `getaddressesbylabel` | `getaddressesbylabel` returns a json object with the addresses as keys, instead of a list of strings. |
+| `getreceivedbyaccount`  | `getreceivedbylabel`  | _no change in behavior_ |
+| `listaccounts`          | `listlabels`          | `listlabels` does not return a balance or accept `minconf` and `watchonly` arguments. |
+| `listreceivedbyaccount` | `listreceivedbylabel` | Both methods return new `label` fields, along with `account` fields for backward compatibility. |
+| `move`                  | n/a                   | _no replacement_ |
+| `sendfrom`              | n/a                   | _no replacement_ |
+| `setaccount`            | `setlabel`            | Both methods now: <ul><li>allow assigning labels to any address, instead of raising an error if the address is not receiving address.<li>delete the previous label associated with an address when the final address using that label is reassigned to a different label, instead of making an implicit `getaccountaddress` call to ensure the previous label still has a receiving address. |
+
+| Changed Method         | Notes   |
+| :--------------------- | :------ |
+| `addmultisigaddress`   | Renamed `account` named parameter to `label`. Still accepts `account` for backward compatibility if running with '-deprecatedrpc=accounts'. |
+| `getnewaddress`        | Renamed `account` named parameter to `label`. Still accepts `account` for backward compatibility. if running with '-deprecatedrpc=accounts' |
+| `listunspent`          | Returns new `label` fields. `account` field will be returned for backward compatibility if running with '-deprecatedrpc=accounts' |
+| `sendmany`             | The `account` named parameter has been renamed to `dummy`. If provided, the `dummy` parameter must be set to the empty string, unless running with the `-deprecatedrpc=accounts` argument (in which case functionality is unchanged). |
+| `listtransactions`     | The `account` named parameter has been renamed to `dummy`. If provided, the `dummy` parameter must be set to the string `*`, unless running with the `-deprecatedrpc=accounts` argument (in which case functionality is unchanged). |
+| `getbalance`           | `account`, `minconf` and `include_watchonly` parameters are deprecated, and can only be used if running with '-deprecatedrpc=accounts' |
+
+Low-level RPC changes
+---------------------
+
+- When bitcoin is not started with any `-wallet=<path>` options, the name of
+  the default wallet returned by `getwalletinfo` and `listwallets` RPCs is
+  now the empty string `""` instead of `"wallet.dat"`. If bitcoin is started
+  with any `-wallet=<path>` options, there is no change in behavior, and the
+  name of any wallet is just its `<path>` string.
+- Passing an empty string (`""`) as the `address_type` parameter to
+  `getnewaddress`, `getrawchangeaddress`, `addmultisigaddress`,
+  `fundrawtransaction` RPCs is now an error. Previously, this would fall back
+  to using the default address type. It is still possible to pass null or leave
+  the parameter unset to use the default address type.
+
+- Bare multisig outputs to our keys are no longer automatically treated as
+  incoming payments. As this feature was only available for multisig outputs for
+  which you had all private keys in your wallet, there was generally no use for
+  them compared to single-key schemes. Furthermore, no address format for such
+  outputs is defined, and wallet software can't easily send to it. These outputs
+  will no longer show up in `listtransactions`, `listunspent`, or contribute to
+  your balance, unless they are explicitly watched (using `importaddress` or
+  `importmulti` with hex script argument). `signrawtransaction*` also still
+  works for them.
+
+- The `getwalletinfo` RPC method now returns an `hdseedid` value, which is always the same as the incorrectly-named `hdmasterkeyid` value. `hdmasterkeyid` will be removed in V0.18.
+- The `getaddressinfo` RPC method now returns an `hdseedid` value, which is always the same as the incorrectly-named `hdmasterkeyid` value. `hdmasterkeyid` will be removed in V0.18.
+
+Other API changes
+-----------------
+
+- The `inactivehdmaster` property in the `dumpwallet` output has been corrected to `inactivehdseed`
+
+### Logging
+
+- The log timestamp format is now ISO 8601 (e.g. "2018-02-28T12:34:56Z").
+
+- When running bitcoind with `-debug` but without `-daemon`, logging to stdout
+  is now the default behavior. Setting `-printtoconsole=1` no longer implicitly
+  disables logging to debug.log. Instead, logging to file can be explicitly disabled
+  by setting `-debuglogfile=0`.
+
+Transaction index changes
+-------------------------
+
+The transaction index is now built separately from the main node procedure,
+meaning the `-txindex` flag can be toggled without a full reindex. If bitcoind
+is run with `-txindex` on a node that is already partially or fully synced
+without one, the transaction index will be built in the background and become
+available once caught up. When switching from running `-txindex` to running
+without the flag, the transaction index database will *not* be deleted
+automatically, meaning it could be turned back on at a later time without a full
+resync.
+
+Miner block size removed
+------------------------
+
+The `-blockmaxsize` option for miners to limit their blocks' sizes was
+deprecated in V0.15.1, and has now been removed. Miners should use the
+`-blockmaxweight` option if they want to limit the weight of their blocks'
+weights.
+
+Python Support
+--------------
+
+Support for Python 2 has been discontinued for all test files and tools.
 
 Credits
 =======
 
 Thanks to everyone who directly contributed to this release:
 
-- Alex Morcos
-- BtcDrak
-- Cory Fields
-- fanquake
-- Gregory Maxwell
-- Gregory Sanders
-- instagibbs
-- Ivo van der Sangen
-- jnewbery
-- Johnson Lau
-- Jonas Schnelli
-- Luke Dashjr
-- maiiz
-- MarcoFalke
-- Masahiko Hyuga
-- Matt Corallo
-- matthias
-- mrbandrews
-- Pavel Janík
-- Pieter Wuille
-- randy-waterhouse
-- Russell Yanofsky
-- S. Matthew English
-- Steven
-- Suhas Daftuar
-- UdjinM6
-- Wladimir J. van der Laan
-- wodry
 
 As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

@@ -28,6 +28,7 @@ BOOST_FIXTURE_TEST_SUITE(omnicore_sender_firstin_tests, BasicTestingSetup)
 static CTransaction TxClassC(const std::vector<CTxOut>& txInputs)
 {
     CMutableTransaction mutableTx;
+#if 0   // zhangzf
 
     // Inputs:
     for (std::vector<CTxOut>::const_iterator it = txInputs.begin(); it != txInputs.end(); ++it)
@@ -65,13 +66,14 @@ static CTransaction TxClassC(const std::vector<CTxOut>& txInputs)
         mutableTx.vout.push_back(txOut);
     }
 
+#endif // if 0
     return CTransaction(mutableTx);
 }
 
 /** Helper to create a CTxOut object. */
 static CTxOut createTxOut(int64_t amount, const std::string& dest)
 {
-    return CTxOut(amount, GetScriptForDestination(CBitcoinAddress(dest).Get()));
+    return CTxOut(amount, GetScriptForDestination(DecodeDestination(dest)));
 }
 
 /** Extracts the "first" sender. */

@@ -30,11 +30,11 @@ bool ShouldConsensusHashBlock(int block) {
         return true;
     }
 
-    if (!mapArgs.count("-omnishowblockconsensushash")) {
+    if (!gArgs.IsArgSet("-omnishowblockconsensushash")) {
         return false;
     }
 
-    const std::vector<std::string>& vecBlocks = mapMultiArgs["-omnishowblockconsensushash"];
+    const std::vector<std::string>& vecBlocks = gArgs.GetArgs("-omnishowblockconsensushash");
     for (std::vector<std::string>::const_iterator it = vecBlocks.begin(); it != vecBlocks.end(); ++it) {
         int64_t paramBlock = StrToInt64(*it, false);
         if (paramBlock < 1) continue; // ignore non numeric values

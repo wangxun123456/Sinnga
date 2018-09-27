@@ -18,8 +18,8 @@
 #include "omnicore/wallettxbuilder.h"
 
 #include "init.h"
-#include "main.h"
 #include "rpc/server.h"
+#include "validation.h"
 #include "sync.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
@@ -372,6 +372,7 @@ UniValue omni_senddexsell(const UniValue& params, bool fHelp)
 
 UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
 {
+#if 0   // TODO zhangzf
     if (fHelp || params.size() < 4 || params.size() > 5)
         throw runtime_error(
             "omni_senddexaccept \"fromaddress\" \"toaddress\" propertyid \"amount\" ( override )\n"
@@ -419,7 +420,7 @@ UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
         nMinimumAcceptFee = sellOffer->getMinFee();
     }
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    //LOCK2(cs_main, pwalletMain->cs_wallet);       // TODO zhangzf
 
     // temporarily update the global transaction fee to pay enough for the accept fee
     CFeeRate payTxFeeOriginal = payTxFee;
@@ -450,6 +451,8 @@ UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
             return txid.GetHex();
         }
     }
+#endif
+    return 0;   // zhangzf delete
 }
 
 UniValue omni_sendissuancecrowdsale(const UniValue& params, bool fHelp)
@@ -1535,6 +1538,7 @@ UniValue omni_sendalert(const UniValue& params, bool fHelp)
 static const CRPCCommand commands[] =
 { //  category                             name                            actor (function)               okSafeMode
   //  ------------------------------------ ------------------------------- ------------------------------ ----------
+#if 0 // TODO zhangzf
 #ifdef ENABLE_WALLET
     { "omni layer (transaction creation)", "omni_sendrawtx",               &omni_sendrawtx,               false },
     { "omni layer (transaction creation)", "omni_send",                    &omni_send,                    false },
@@ -1569,6 +1573,7 @@ static const CRPCCommand commands[] =
     { "hidden",                            "sendtoowners_MP",              &omni_sendsto,                 false },
     { "hidden",                            "trade_MP",                     &trade_MP,                     false },
 #endif
+#endif // if 0
 };
 
 void RegisterOmniTransactionCreationRPCCommands(CRPCTable &tableRPC)

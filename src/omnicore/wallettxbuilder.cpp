@@ -10,12 +10,12 @@
 
 #include "amount.h"
 #include "base58.h"
-#include "coincontrol.h"
+#include "wallet/coincontrol.h"
 #include "coins.h"
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "keystore.h"
-#include "main.h"
+#include "validation.h"
 #include "primitives/transaction.h"
 #include "script/script.h"
 #include "script/sign.h"
@@ -48,8 +48,10 @@ int WalletTxBuilder(
         std::string& retRawTx,
         bool commit)
 {
+    // TODO zhangzf
+#if 0
 #ifdef ENABLE_WALLET
-    if (pwalletMain == NULL) return MP_ERR_WALLET_ACCESS;
+    if (HasWallets()) return MP_ERR_WALLET_ACCESS;
 
     // Determine the class to send the transaction via - default is Class C
     int omniTxClass = OMNI_CLASS_C;
@@ -57,7 +59,7 @@ int WalletTxBuilder(
 
     // Prepare the transaction - first setup some vars
     CCoinControl coinControl;
-    CWalletTx wtxNew;
+    CTransactionRef wtxNew;
     int64_t nFeeRet = 0;
     int nChangePosInOut = -1;
     std::string strFailReason;
@@ -124,6 +126,7 @@ int WalletTxBuilder(
     return MP_ERR_WALLET_ACCESS;
 #endif
 
+#endif
 }
 
 #ifdef ENABLE_WALLET
@@ -133,6 +136,7 @@ static void LockUnrelatedCoins(
         const std::set<CTxDestination>& destinations,
         std::vector<COutPoint>& retLockedCoins)
 {
+#if 0   // TODO zhangzf
     if (pwallet == NULL) {
         return;
     }
@@ -157,6 +161,7 @@ static void LockUnrelatedCoins(
         pwallet->LockCoin(outpointLocked);
         retLockedCoins.push_back(outpointLocked);
     }
+#endif
 }
 
 /** Unlocks all coins, which were previously locked. */
@@ -187,8 +192,9 @@ int CreateFundedTransaction(
         const std::vector<unsigned char>& payload,
         uint256& retTxid)
 {
+#if 0   // TODO zhangzf
 #ifdef ENABLE_WALLET
-    if (pwalletMain == NULL) {
+    if (HasWallets()) {
         return MP_ERR_WALLET_ACCESS;
     }
 
@@ -204,7 +210,7 @@ int CreateFundedTransaction(
 
     // add reference output, if there is one
     if (!receiverAddress.empty()) {
-        CScript scriptPubKey = GetScriptForDestination(CBitcoinAddress(receiverAddress).Get());
+        CScript scriptPubKey = GetScriptForDestination(DecodeDestination(receiverAddress));
         vecSend.push_back(std::make_pair(scriptPubKey, GetDustThreshold(scriptPubKey)));
     }
 
@@ -341,5 +347,6 @@ int CreateFundedTransaction(
 #else
     return MP_ERR_WALLET_ACCESS;
 #endif
-
+#endif
+    return 0;   // zhangzf delete
 }

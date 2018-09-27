@@ -11,8 +11,9 @@
 #include "omnicore/log.h"
 #include "omnicore/version.h"
 
-#include "main.h"
 #include "ui_interface.h"
+
+#include <validation.h>
 
 #include <boost/filesystem.hpp>
 
@@ -90,7 +91,7 @@ void CheckLiveActivations(int blockHeight)
             std::string msgText = strprintf("Shutting down due to unsupported feature activation (%d: %s)", liveActivation.featureId, liveActivation.featureName);
             PrintToLog(msgText);
             PrintToConsole(msgText);
-            if (!GetBoolArg("-overrideforcedshutdown", false)) {
+            if (!gArgs.GetArg("-overrideforcedshutdown", false)) {
                 boost::filesystem::path persistPath = GetDataDir() / "MP_persist";
                 if (boost::filesystem::exists(persistPath)) boost::filesystem::remove_all(persistPath); // prevent the node being restarted without a reparse after forced shutdown
                 AbortNode(msgText, msgText);
@@ -177,8 +178,8 @@ bool CheckActivationAuthorization(const std::string& sender)
     // use -omniactivationallowsender for testing
 
     // Add manually whitelisted sources
-    if (mapArgs.count("-omniactivationallowsender")) {
-        const std::vector<std::string>& sources = mapMultiArgs["-omniactivationallowsender"];
+    if (gArgs.IsArgSet("-omniactivationallowsender")) {
+        const std::vector<std::string>& sources = gArgs.GetArgs("-omniactivationallowsender");
 
         for (std::vector<std::string>::const_iterator it = sources.begin(); it != sources.end(); ++it) {
             whitelisted.insert(*it);
@@ -186,8 +187,8 @@ bool CheckActivationAuthorization(const std::string& sender)
     }
 
     // Remove manually ignored sources
-    if (mapArgs.count("-omniactivationignoresender")) {
-        const std::vector<std::string>& sources = mapMultiArgs["-omniactivationignoresender"];
+    if (gArgs.IsArgSet("-omniactivationignoresender")) {
+        const std::vector<std::string>& sources = gArgs.GetArgs("-omniactivationignoresender");
 
         for (std::vector<std::string>::const_iterator it = sources.begin(); it != sources.end(); ++it) {
             whitelisted.erase(*it);
@@ -228,8 +229,8 @@ bool CheckDeactivationAuthorization(const std::string& sender)
     // use -omniactivationallowsender for testing
 
     // Add manually whitelisted sources - custom sources affect both activation and deactivation
-    if (mapArgs.count("-omniactivationallowsender")) {
-        const std::vector<std::string>& sources = mapMultiArgs["-omniactivationallowsender"];
+    if (gArgs.IsArgSet("-omniactivationallowsender")) {
+        const std::vector<std::string>& sources = gArgs.GetArgs("-omniactivationallowsender");
 
         for (std::vector<std::string>::const_iterator it = sources.begin(); it != sources.end(); ++it) {
             whitelisted.insert(*it);
@@ -237,8 +238,8 @@ bool CheckDeactivationAuthorization(const std::string& sender)
     }
 
     // Remove manually ignored sources - custom sources affect both activation and deactivation
-    if (mapArgs.count("-omniactivationignoresender")) {
-        const std::vector<std::string>& sources = mapMultiArgs["-omniactivationignoresender"];
+    if (gArgs.IsArgSet("-omniactivationignoresender")) {
+        const std::vector<std::string>& sources = gArgs.GetArgs("-omniactivationignoresender");
 
         for (std::vector<std::string>::const_iterator it = sources.begin(); it != sources.end(); ++it) {
             whitelisted.erase(*it);

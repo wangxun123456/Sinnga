@@ -12,6 +12,9 @@
 #include "base58.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
+#include "chainparams.h"
+#include "pubkey.h"
+#include "key_io.h"
 
 // TODO: use crypto/sha256 instead of openssl
 #include "openssl/sha.h"
@@ -84,15 +87,14 @@ void SwapByteOrder64(uint64_t& ull)
  */
 std::string HashToAddress(unsigned char version, const uint160& hash)
 {
-    CBitcoinAddress address;
     if (version == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS)[0]) {
-        CKeyID keyId = hash;
-        address.Set(keyId);
-        return address.ToString();
+        CKeyID keyId(hash);
+        CTxDestination dest = keyId;
+        return EncodeDestination(dest);
     } else if (version == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS)[0]) {
         CScriptID scriptId = hash;
-        address.Set(scriptId);
-        return address.ToString();
+        CTxDestination dest = scriptId;
+        return EncodeDestination(dest);
     }
 
     return "";

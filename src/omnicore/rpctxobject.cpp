@@ -25,8 +25,8 @@
 #include "omnicore/walletutils.h"
 
 #include "chainparams.h"
-#include "main.h"
 #include "primitives/transaction.h"
+#include "validation.h"
 #include "sync.h"
 #include "uint256.h"
 
@@ -53,13 +53,13 @@ using namespace mastercore;
 int populateRPCTransactionObject(const uint256& txid, UniValue& txobj, std::string filterAddress, bool extendedDetails, std::string extendedDetailsFilter)
 {
     // retrieve the transaction from the blockchain and obtain it's height/confs/time
-    CTransaction tx;
+    CTransactionRef tx;
     uint256 blockHash;
     if (!GetTransaction(txid, tx, Params().GetConsensus(), blockHash, true)) {
         return MP_TX_NOT_FOUND;
     }
 
-    return populateRPCTransactionObject(tx, blockHash, txobj, filterAddress, extendedDetails, extendedDetailsFilter);
+    return populateRPCTransactionObject(*tx, blockHash, txobj, filterAddress, extendedDetails, extendedDetailsFilter);
 }
 
 int populateRPCTransactionObject(const CTransaction& tx, const uint256& blockHash, UniValue& txobj, std::string filterAddress, bool extendedDetails, std::string extendedDetailsFilter, int blockHeight)

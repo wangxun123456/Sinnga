@@ -39,7 +39,7 @@
 #include "base58.h"
 #include "chainparams.h"
 #include "init.h"
-#include "main.h"
+#include "validation.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "rpc/server.h"
@@ -528,7 +528,7 @@ UniValue omni_getpayload(const UniValue& params, bool fHelp)
 
     uint256 txid = ParseHashV(params[0], "txid");
 
-    CTransaction tx;
+    CTransactionRef tx;
     uint256 blockHash;
     if (!GetTransaction(txid, tx, Params().GetConsensus(), blockHash, true)) {
         PopulateFailure(MP_TX_NOT_FOUND);
@@ -545,7 +545,7 @@ UniValue omni_getpayload(const UniValue& params, bool fHelp)
     }
 
     CMPTransaction mp_obj;
-    int parseRC = ParseTransaction(tx, blockHeight, 0, mp_obj, blockTime);
+    int parseRC = ParseTransaction(*tx, blockHeight, 0, mp_obj, blockTime);
     if (parseRC < 0) PopulateFailure(MP_TX_IS_NOT_MASTER_PROTOCOL);
 
     UniValue payloadObj(UniValue::VOBJ);
@@ -579,6 +579,10 @@ UniValue omni_setautocommit(const UniValue& params, bool fHelp)
 // display the tally map & the offer/accept list(s)
 UniValue mscrpc(const UniValue& params, bool fHelp)
 {
+    // TODO zhangzf 
+    // pwalletMain   ->   refer rpcwallet
+    // param        ->   const JSONRPCRequest& request
+#if 0
     int extra = 0;
     int extra2 = 0, extra3 = 0;
 
@@ -740,6 +744,7 @@ UniValue mscrpc(const UniValue& params, bool fHelp)
             break;
     }
 
+#endif
     return GetHeight();
 }
 
@@ -897,6 +902,9 @@ static std::set<std::string> getWalletAddresses(bool fIncludeWatchOnly)
 {
     std::set<std::string> result;
 
+//  TODO zhangzf
+#if 0
+
 #ifdef ENABLE_WALLET
     LOCK(pwalletMain->cs_wallet);
 
@@ -910,11 +918,15 @@ static std::set<std::string> getWalletAddresses(bool fIncludeWatchOnly)
     }
 #endif
 
+#endif
+
     return result;
 }
 
 UniValue omni_getwalletbalances(const UniValue& params, bool fHelp)
 {
+    // TODO zhangzf
+#if 0
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "omni_getwalletbalances ( includewatchonly )\n"
@@ -1017,11 +1029,15 @@ UniValue omni_getwalletbalances(const UniValue& params, bool fHelp)
     }
 #endif
 
+#endif
+    UniValue response(UniValue::VARR); // TODO zhangzf   delete
     return response;
 }
 
 UniValue omni_getwalletaddressbalances(const UniValue& params, bool fHelp)
 {
+    // TODO zhangzf
+#if 0
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "omni_getwalletaddressbalances ( includewatchonly )\n"
@@ -1102,6 +1118,8 @@ UniValue omni_getwalletaddressbalances(const UniValue& params, bool fHelp)
     }
 #endif
 
+#endif
+    UniValue response(UniValue::VARR);  // zhangzf delete it
     return response;
 }
 
@@ -1280,7 +1298,7 @@ UniValue omni_getcrowdsale(const UniValue& params, bool fHelp)
 
     const uint256& creationHash = sp.txid;
 
-    CTransaction tx;
+    CTransactionRef tx;
     uint256 hashBlock;
     if (!GetTransaction(creationHash, tx, Params().GetConsensus(), hashBlock, true)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
@@ -1409,7 +1427,7 @@ UniValue omni_getactivecrowdsales(const UniValue& params, bool fHelp)
 
         const uint256& creationHash = sp.txid;
 
-        CTransaction tx;
+        CTransactionRef tx;
         uint256 hashBlock;
         if (!GetTransaction(creationHash, tx, Params().GetConsensus(), hashBlock, true)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
@@ -1882,11 +1900,11 @@ UniValue omni_listblocktransactions(const UniValue& params, bool fHelp)
 
     LOCK(cs_tally);
 
-    BOOST_FOREACH(const CTransaction&tx, block.vtx) {
-        if (p_txlistdb->exists(tx.GetHash())) {
+    for(const CTransactionRef&tx : block.vtx) {
+        if (p_txlistdb->exists(tx->GetHash())) {
             // later we can add a verbose flag to decode here, but for now callers can send returned txids into gettransaction_MP
             // add the txid into the response as it's an MP transaction
-            response.push_back(tx.GetHash().GetHex());
+            response.push_back(tx->GetHash().GetHex());
         }
     }
 
@@ -2046,7 +2064,7 @@ UniValue omni_listpendingtransactions(const UniValue& params, bool fHelp)
     mempool.queryHashes(vTxid);
 
     UniValue result(UniValue::VARR);
-    BOOST_FOREACH(const uint256& hash, vTxid) {
+    for(const uint256& hash : vTxid) {
         UniValue txObj(UniValue::VOBJ);
         if (populateRPCTransactionObject(hash, txObj, filterAddress) == 0) {
             result.push_back(txObj);
@@ -2431,6 +2449,8 @@ UniValue omni_getbalanceshash(const UniValue& params, bool fHelp)
 
 static const CRPCCommand commands[] =
 { //  category                             name                            actor (function)               okSafeMode
+    // TODO zhangzf
+#if 0
   //  ------------------------------------ ------------------------------- ------------------------------ ----------
     { "omni layer (data retrieval)", "omni_getinfo",                   &omni_getinfo,                    true  },
     { "omni layer (data retrieval)", "omni_getactivations",            &omni_getactivations,             true  },
@@ -2487,6 +2507,7 @@ static const CRPCCommand commands[] =
     { "hidden",                      "listblocktransactions_MP",       &omni_listblocktransactions,      false },
 #ifdef ENABLE_WALLET
     { "hidden",                      "listtransactions_MP",            &omni_listtransactions,           false },
+#endif
 #endif
 };
 

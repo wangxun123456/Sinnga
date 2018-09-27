@@ -93,11 +93,11 @@ UniValue omni_decodetransaction(const UniValue& params, bool fHelp)
     {
         LOCK2(cs_main, cs_tx_cache);
         // temporarily switch global coins view cache for transaction inputs
-        std::swap(view, viewTemp);
+        //std::swap(view, viewTemp);    // TODO zhangzf
         // then get the results
         populateResult = populateRPCTransactionObject(tx, uint256(), txObj, "", false, "", blockHeight);
         // and restore the original, unpolluted coins view cache
-        std::swap(viewTemp, view);
+        //std::swap(viewTemp, view);    // TODO zhangzf
     }
 
     if (populateResult != 0) PopulateFailure(populateResult);
@@ -317,13 +317,14 @@ UniValue omni_createrawtx_change(const UniValue& params, bool fHelp)
 static const CRPCCommand commands[] =
 { //  category                         name                          actor (function)             okSafeMode
   //  -------------------------------- ----------------------------- ---------------------------- ----------
+#if 0   // TODO zhangzf
     { "omni layer (raw transactions)", "omni_decodetransaction",     &omni_decodetransaction,     true },
     { "omni layer (raw transactions)", "omni_createrawtx_opreturn",  &omni_createrawtx_opreturn,  true },
     { "omni layer (raw transactions)", "omni_createrawtx_multisig",  &omni_createrawtx_multisig,  true },
     { "omni layer (raw transactions)", "omni_createrawtx_input",     &omni_createrawtx_input,     true },
     { "omni layer (raw transactions)", "omni_createrawtx_reference", &omni_createrawtx_reference, true },
     { "omni layer (raw transactions)", "omni_createrawtx_change",    &omni_createrawtx_change,    true },
-
+#endif
 };
 
 void RegisterOmniRawTransactionRPCCommands(CRPCTable &tableRPC)
