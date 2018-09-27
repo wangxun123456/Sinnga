@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include <chainparamsseeds.h>
+#include <string>
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -32,6 +33,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
+
     return genesis;
 }
 
@@ -396,25 +398,54 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xfb;
-        pchMessageStart[1] = 0xe0;
-        pchMessageStart[2] = 0xb6;
-        pchMessageStart[3] = 0xdb;
+        pchMessageStart[0] = 0xa3;
+        pchMessageStart[1] = 0xbd;
+        pchMessageStart[2] = 0x34;
+        pchMessageStart[3] = 0xd0;
         nDefaultPort = 7388;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
+        // genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
+
+		/********** miner genesis block***************/
+		// fprintf(stderr, "*********** recalculating params for MyNewNet ***********\n");
+		// const char* pszTimestamp = "The Underwater Engineering Feat of the 19th Century: The Transatlantic Cable";
+		// const CScript genesisOutputScript = CScript() << ParseHex("043489b47791f4f4d28286703b0fde91e2057db4c1db6d6062d8ba4ef395113f3c9d6ab50d84d3a4132fdfc4c7239187cacf4bede74f2f49d8cdb118e990f28562") << OP_CHECKSIG;
+		// uint32_t nNonce = 0;
+		
+		// do {
+		// 	genesis = CreateGenesisBlock(pszTimestamp, genesisOutputScript, 1537242843, nNonce, 0x1d00ffff, 1, 50 * COIN);
+
+		// 	if (genesis.GetHash().ToString().compare("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff") < 0) {
+		// 		fprintf(stderr, "New genesis nonce: %s\n", std::to_string(genesis.nNonce).c_str());
+		// 		fprintf(stderr, "New genesis merkle root: %s\n", genesis.hashMerkleRoot.ToString().c_str());
+		// 		fprintf(stderr, "New genesis hash: %s\n", genesis.GetHash().ToString().c_str());
+				
+		// 		break;
+		// 	}
+
+		// 	++nNonce;
+		// }
+		// while (nNonce != 0);
+		
+		// fprintf(stderr, "*********** calculating finish ***********");
+		/*********************************************/
+
+		const char* pszTimestamp = "The Underwater Engineering Feat of the 19th Century: The Transatlantic Cable";
+		const CScript genesisOutputScript = CScript() << ParseHex("043489b47791f4f4d28286703b0fde91e2057db4c1db6d6062d8ba4ef395113f3c9d6ab50d84d3a4132fdfc4c7239187cacf4bede74f2f49d8cdb118e990f28562") << OP_CHECKSIG;
+		genesis = CreateGenesisBlock(pszTimestamp, genesisOutputScript, 1537242843, 748668401, 0x1d00ffff, 1, 50 * COIN);
+		
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+		assert(consensus.hashGenesisBlock == uint256S("0x000000001b9b5951c8307b4d439b41f7d4ba88ad015f7d5b92f7b9287052d686"));
+        assert(genesis.hashMerkleRoot == uint256S("0x59e07786f884ee7fe1452fd211e50c73d6b57722bc326d8ee61d4cdebbbec009"));
 
         vSeeds.clear();
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
+        base58Prefixes[EXT_PUBLIC_KEY] = {0xcf, 0xd7, 0x34, 0x8a};
+        base58Prefixes[EXT_SECRET_KEY] = {0xcf, 0xd7, 0x3b, 0x7f};
 
         bech32_hrp = "mnbc";
 
@@ -426,15 +457,15 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
+                {0, uint256S("0x000000001b9b5951c8307b4d439b41f7d4ba88ad015f7d5b92f7b9287052d686")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data from rpc: getchaintxstats 4096 0000000000000000002e63058c023a9a1de233554f28c7b21380b6c9003f36a8
-            /* nTime    */ 1532884444,
-            /* nTxCount */ 331282217,
-            /* dTxRate  */ 2.4
+            /* nTime    */ 1537242843,
+            /* nTxCount */ 0,
+            /* dTxRate  */ 0
         };
 
         /* disable fallback fee on mainnet */
