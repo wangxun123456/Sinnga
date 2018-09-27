@@ -40,4 +40,8 @@ Related projects
 Support
 -------
 
+Bitcoin Version
+-----------------
+* 0.17
+
 * Please open a [GitHub issue](https://github.com/OmniLayer/omnicore/issues) to file a bug submission.
