@@ -1,3 +1,8 @@
 # Zhaofu Zhang - Hayek Team
 
 coding start from bitcoin core 0.17
+
+
+## omnicore
+2018-09-27 Merge omnicore code and bitcoin code
+in omni directory, a few files use "#if 0    #endif". These files need TODO.
