@@ -152,7 +152,7 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
             /* Original format string will have newline so don't add one here */ \
             _log_msg_ = "Error \"" + std::string(fmterr.what()) + "\" while formatting log message: " + FormatStringFromLogArgs(__VA_ARGS__); \
         } \
-        g_logger->LogPrintStr(_log_msg_); \
+        g_logger->LogPrintStr("[" + std::string(__FILE__) + "(" + std::string(__func__) + "):" + std::to_string(__LINE__) + "] " + _log_msg_); \
     } \
 } while(0)
 

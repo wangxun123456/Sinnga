@@ -1673,6 +1673,7 @@ bool AppInitMain()
 	mastercore_init();
 
     // ********************************************************* Step 8: start indexers
+	LogPrintf("// ********************************************************* Step 8: start indexers");
     if (gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
         g_txindex = MakeUnique<TxIndex>(nTxIndexCache, false, fReindex);
         g_txindex->Start();
@@ -1680,13 +1681,14 @@ bool AppInitMain()
 
 
     // ********************************************************* Step 9: load wallet
+	LogPrintf("// ********************************************************* Step 9: load wallet");
     if (!g_wallet_init_interface.Open()) return false;
 
 	// Omni Core code should be initialized and wallet should now be loaded, perform an initial populat$
 	CheckWalletUpdate();
 
     // ********************************************************* Step 10: data directory maintenance
-
+    LogPrintf("// ********************************************************* Step 10: data directory maintenance");
     // if pruning, unset the service bit and perform the initial blockstore prune
     // after any wallet rescanning has taken place.
     if (fPruneMode) {

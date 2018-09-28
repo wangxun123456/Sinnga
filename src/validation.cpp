@@ -214,7 +214,7 @@ private:
 
     bool RollforwardBlock(const CBlockIndex* pindex, CCoinsViewCache& inputs, const CChainParams& params) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     int GetHeight() {
-		LogPrint(BCLog::BENCH, "Get Fix Height = 1");
+		LogPrint(BCLog::BENCH, "Get Fix Height = 1\n");
 		LOCK(cs_main);
 		return chainActive.Height();
     }
