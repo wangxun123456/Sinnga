@@ -314,7 +314,7 @@ static void HandleSIGTERM(int)
 static void HandleSIGHUP(int)
 {
     g_logger->m_reopen_file = true;
-    fReopenOmniCoreLog = true;
+    fReopenOmniCoreLog = true;  // TODO zhangzf
 }
 #else
 static BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType)
@@ -524,6 +524,7 @@ void SetupServerArgs()
     gArgs.AddArg("-rpcuser=<user>", "Username for JSON-RPC connections", false, OptionsCategory::RPC);
     gArgs.AddArg("-rpcworkqueue=<n>", strprintf("Set the depth of the work queue to service RPC calls (default: %d)", DEFAULT_HTTP_WORKQUEUE), true, OptionsCategory::RPC);
     gArgs.AddArg("-server", "Accept command line and JSON-RPC commands", false, OptionsCategory::RPC);
+    gArgs.AddArg("-rpcforceutf8", strprintf("Replace invalid UTF-8 encoded characters with question marks in RPC response (default: %d)", 1), true, OptionsCategory::RPC);
 
 #if HAVE_DECL_DAEMON
     gArgs.AddArg("-daemon", "Run in the background as a daemon and accept commands", false, OptionsCategory::OPTIONS);
@@ -1684,6 +1685,10 @@ bool AppInitMain()
 
     // ********************************************************* Step 9: load wallet
     if (!g_wallet_init_interface.Open()) return false;
+
+    // Omni Core code should be initialized and wallet should now be loaded, perform an initial populat$
+    CheckWalletUpdate();
+
 
     // ********************************************************* Step 10: data directory maintenance
 
