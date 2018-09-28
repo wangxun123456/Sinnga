@@ -1635,6 +1635,7 @@ bool AppInitMain()
     fFeeEstimatesInitialized = true;
 
 	// ********************************************************* Step 7.5: load omni core
+	LogPrintf("********************************************************* Step 7.5: load omni core\n");
 	if (!gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
 		// ask the user if they would like us to modify their config file for them
 		std::string msg = _("Disabled transaction index detected.\n\n"
@@ -1673,7 +1674,7 @@ bool AppInitMain()
 	mastercore_init();
 
     // ********************************************************* Step 8: start indexers
-	LogPrintf("// ********************************************************* Step 8: start indexers");
+	LogPrintf("********************************************************* Step 8: start indexers\n");
     if (gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
         g_txindex = MakeUnique<TxIndex>(nTxIndexCache, false, fReindex);
         g_txindex->Start();
@@ -1681,14 +1682,14 @@ bool AppInitMain()
 
 
     // ********************************************************* Step 9: load wallet
-	LogPrintf("// ********************************************************* Step 9: load wallet");
+	LogPrintf("********************************************************* Step 9: load wallet\n");
     if (!g_wallet_init_interface.Open()) return false;
 
 	// Omni Core code should be initialized and wallet should now be loaded, perform an initial populat$
 	CheckWalletUpdate();
 
     // ********************************************************* Step 10: data directory maintenance
-    LogPrintf("// ********************************************************* Step 10: data directory maintenance");
+    LogPrintf("********************************************************* Step 10: data directory maintenance\n");
     // if pruning, unset the service bit and perform the initial blockstore prune
     // after any wallet rescanning has taken place.
     if (fPruneMode) {
@@ -1710,7 +1711,7 @@ bool AppInitMain()
     }
 
     // ********************************************************* Step 11: import blocks
-
+    LogPrintf("********************************************************* Step 11: import blocks\n");
     if (!CheckDiskSpace() && !CheckDiskSpace(0, true))
         return false;
 
@@ -1749,7 +1750,7 @@ bool AppInitMain()
     }
 
     // ********************************************************* Step 12: start node
-
+    LogPrintf("********************************************************* Step 12: start node\n");
     int chain_active_height;
 
     //// debug print
@@ -1827,11 +1828,11 @@ bool AppInitMain()
     }
 
     // ********************************************************* Step 13: finished
-
+    LogPrintf("********************************************************* Step 13: finished\n");
     SetRPCWarmupFinished();
     uiInterface.InitMessage(_("Done loading"));
 
     g_wallet_init_interface.Start(scheduler);
-
+    LogPrintf("Done loading\n");
     return true;
 }

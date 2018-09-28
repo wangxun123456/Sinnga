@@ -2295,7 +2295,7 @@ void static UpdateTip(const CBlockIndex *pindexNew, const CChainParams& chainPar
       GuessVerificationProgress(chainParams.TxData(), pindexNew), pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
     if (!warningMessages.empty())
         LogPrintf(" warning='%s'", warningMessages); /* Continued */
-    LogPrintf("\n");
+    LogPrintf(".\n");
 
 }
 /** Disconnect chainActive's tip.
@@ -2489,7 +2489,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
 	unsigned int nNumMetaTxs = 0;
 
     //! Omni Core: begin block connect notification
-	LogPrintf("handler", "Omni Core handler: block connect begin [height: %d]\n", GetHeight()); 
+	LogPrint(BCLog::BENCH,"Omni Core handler: block connect begin [height: %d]\n", GetHeight()); 
     mastercore_handler_block_begin(GetHeight(), pindexNew);
 
     // Remove conflicting transactions from the mempool.;
@@ -2499,7 +2499,7 @@ bool CChainState::ConnectTip(CValidationState& state, const CChainParams& chainp
     chainActive.SetTip(pindexNew);
     UpdateTip(pindexNew, chainparams);
 
-	for(CTransactionRef tx : pblock->vtx) {
+	for(CTransactionRef tx : pthisBlock->vtx) {
 		LogPrint(BCLog::BENCH, "Omni Core handler: new confirmed transaction [height: %d, idx: %u]\n", GetHeight(), nTxIdx);
 		if (mastercore_handler_tx(*tx, chainActive.Height(), nTxIdx++, pindexNew)) ++nNumMetaTxs;
 	}
@@ -4506,6 +4506,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
             }
         }
     } catch (const std::runtime_error& e) {
+        LogPrintf("System error: %s\n", + e.what());
         AbortNode(std::string("System error: ") + e.what());
     }
     if (nLoaded > 0)

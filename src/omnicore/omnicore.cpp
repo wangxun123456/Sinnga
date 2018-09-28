@@ -1573,7 +1573,8 @@ void RewindDBsAndState(int nHeight, int nBlockPrev = 0, bool fInitialParse = fal
  */
 int mastercore_init()
 {
-    LOCK(cs_tally);
+//jg checking 
+//LOCK(cs_tally);
 
     if (mastercoreInitialized) {
         // nothing to do
