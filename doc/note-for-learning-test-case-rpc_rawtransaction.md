@@ -6,6 +6,7 @@
    - getrawtransaction
 
 2.Before debugging rpc_rawtransaction.py file, we need change the rpc_timewait to 60 * 120 (two hous) in order to avoiding the RPC call failure resulted by timeout during debugging. 
+    
     class RawTransactionsTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
@@ -21,4 +22,4 @@
     12478 pts/2    SLl+   1:18 /home/hunter/bitcoin/src/bitcoind -datadir=/tmp/test4o6ctbl2/node2 -logtimemicros -debug -debugexclude=libevent -debugexclude=leveldb -mocktime=0 -uacomment=testnode2 -addresstype=legacy
   that makes us to be easy to distinguish which pid which bitciond node has, whne test case call RPC createrawtransaction on node 0, we need attach to pid 12476 for debugging.
 
-4.  
+4.   
