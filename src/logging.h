@@ -85,6 +85,8 @@ namespace BCLog {
         fs::path m_file_path;
         std::atomic<bool> m_reopen_file{false};
 
+        std::atomic<bool> m_reopen_omnicorefile{false};
+
         /** Send a string to the log output */
         void LogPrintStr(const std::string &str);
 

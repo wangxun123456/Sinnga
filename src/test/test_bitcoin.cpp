@@ -38,6 +38,7 @@ FastRandomContext insecure_rand_ctx(insecure_rand_seed);
 
 extern bool fPrintToConsole;
 extern void noui_connect();
+extern int mastercore_shutdown();
 
 std::ostream& operator<<(std::ostream& os, const uint256& num)
 {
@@ -112,6 +113,7 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
 
 TestingSetup::~TestingSetup()
 {
+        mastercore_shutdown();
         threadGroup.interrupt_all();
         threadGroup.join_all();
         GetMainSignals().FlushBackgroundCallbacks();

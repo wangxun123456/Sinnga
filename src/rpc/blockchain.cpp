@@ -491,9 +491,9 @@ static UniValue getrawmempool(const JSONRPCRequest& request)
     return mempoolToJSON(fVerbose);
 }
 
-UniValue clearmempool(const UniValue& params, bool fHelp)
+UniValue clearmempool(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() > 0)
+    if (request.fHelp || request.params.size() > 0)
         throw std::runtime_error(
             "clearmempool\n"
             "\nClears the memory pool and returns a list of the removed transactions.\n"
@@ -2235,8 +2235,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "scantxoutset",           &scantxoutset,           {"action", "scanobjects"} },
 
     // omnicore added
-    // TODO zhangzf
-    //{ "blockchain",         "clearmempool",           &clearmempool,           true  },   
+    { "blockchain",         "clearmempool",           &clearmempool,           {} },   
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        {"blockhash"} },

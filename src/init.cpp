@@ -314,7 +314,7 @@ static void HandleSIGTERM(int)
 static void HandleSIGHUP(int)
 {
     g_logger->m_reopen_file = true;
-    fReopenOmniCoreLog = true;  // TODO zhangzf
+    g_logger->m_reopen_omnicorefile = true;
 }
 #else
 static BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType)

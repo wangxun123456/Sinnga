@@ -88,9 +88,6 @@ ArgsManager gArgs;
 
 CTranslationInterface translationInterface;
 
-/** Flag to indicate, whether the Omni Core log file should be reopened. */
-std::atomic<bool> fReopenOmniCoreLog(false);
-
 /** Init OpenSSL library multithreading support */
 static std::unique_ptr<CCriticalSection[]> ppmutexOpenSSL;
 void locking_callback(int mode, int i, const char* file, int line) NO_THREAD_SAFETY_ANALYSIS
