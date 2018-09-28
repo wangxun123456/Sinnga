@@ -8,6 +8,46 @@
 
 #define PRODUCE_NODE_COUNT 6
 
+
+int8_t GetSlotAtTime(int64_t){
+    return 0;
+}
+
+void NewChainBanner()
+{
+   std::cerr << "\n"
+      "********************************\n"
+      "*                              *\n"
+      "*   ------- NEW CHAIN ------   *\n"
+      "*   -- Welcome to Sinnga! --   *\n"
+      "*   ------------------------   *\n"
+      "*                              *\n"
+      "********************************\n"
+      "\n";
+   if( GetSlotAtTime(GetTime()) > 200 )
+   {
+      std::cerr << "Your genesis seems to have an old timestamp\n"
+         "Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n"
+         "\n"
+         ;
+   }
+}
+
+enum block_production_condition_enum
+{
+    produced = 0,
+    not_synced = 1,
+    not_my_turn = 2,
+    not_time_yet = 3,
+    no_private_key = 4,
+    low_participation = 5,
+    lag = 6,
+    consecutive = 7,
+    exception_producing_block = 8
+};
+
+
+
 int64_t block_interval=10;//10s
 int64_t new_round_begin_time=0;
 bool round_generated=false;
