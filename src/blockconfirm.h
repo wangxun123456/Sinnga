@@ -28,8 +28,8 @@ public:
         m_height(heightIn){}
     ~CBlockConfirm()
     {
-        HLOG("in ~CBlockConfirm");
-        HLOG("confirm = %s",ToString().c_str());
+//        HLOG("in ~CBlockConfirm");
+//        HLOG("confirm = %s",ToString().c_str());
     }
     void SetNull(){m_hashBlock.SetNull();}
     bool IsNull() const {return m_hashBlock.IsNull();}

@@ -910,10 +910,14 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
     HLOG("in");
     LOCK(cs_main);
 
-    static int nHighestFastAnnounce = 0;
-    if (pindex->nHeight <= nHighestFastAnnounce)
-        return;
-    nHighestFastAnnounce = pindex->nHeight;
+//    static int nHighestFastAnnounce = 0;
+//    if (pindex->nHeight <= nHighestFastAnnounce)
+//    {
+//        HLOG("nHighestFastAnnounce = %d",nHighestFastAnnounce);
+//        HLOG("indexhegith = %d\n",pindex->nHeight);
+//        return;
+//    }
+//    nHighestFastAnnounce = pindex->nHeight;
 
     bool fWitnessEnabled = IsWitnessEnabled(pindex->pprev, Params().GetConsensus());
     uint256 hashBlock(pblock->GetHash());
@@ -925,10 +929,8 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
         most_recent_compact_block = pcmpctblock;
         fWitnessesPresentInMostRecentCompactBlock = fWitnessEnabled;
     }
-
     connman->ForEachNode([this, &pcmpctblock, pindex, &msgMaker, fWitnessEnabled, &hashBlock](CNode* pnode) {
         AssertLockHeld(cs_main);
-
         // TODO: Avoid the repeated-serialization here
         if (pnode->nVersion < INVALID_CB_NO_BAN_VERSION || pnode->fDisconnect)
             return;
@@ -937,12 +939,12 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
         // If the peer has, or we announced to them the previous block already,
         // but we don't think they have this one, go ahead and announce it
 
-        HLOG("fPreferHeaderAndIDs = %d",state.fPreferHeaderAndIDs);
         if (state.fPreferHeaderAndIDs && (!fWitnessEnabled || state.fWantsCmpctWitness) &&
                 !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev)) {
 
             LogPrint(BCLog::NET, "%s sending header-and-ids %s to peer=%d\n", "PeerLogicValidation::NewPoWValidBlock",
                      hashBlock.ToString(), pnode->GetId());
+            HLOG("send block %s to node",hashBlock.ToString().c_str());
             connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock));
             state.pindexBestHeaderSent = pindex;
         }
@@ -1804,8 +1806,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         // If the peer is old enough to have the old alert system, send it the final alert.
         if (pfrom->nVersion <= 70012) {
             CDataStream finalAlert(ParseHex("60010000000000000000000000ffffff7f00000000ffffff7ffeffff7f01ffffff7f00000000ffffff7f00ffffff7f002f555247454e543a20416c657274206b657920636f6d70726f6d697365642c2075706772616465207265717569726564004630440220653febd6410f470f6bae11cad19c48413becb1ac2c17f908fd0fd53bdc3abd5202206d0e9c96fe88d4a0f01ed9dedae2b6f9e00da94cad0fecaae66ecf689bf71b50"), SER_NETWORK, PROTOCOL_VERSION);
-			// if need uncomment below line and comment above line
-			// CDataStream finalAlert(ParseHex("047eb569b3852dda7caaf48ed9119dc54f71fba9ac2d2b5eed6fc53e3fb7a2863ed4df63725366bcb32dcc0633151a008abb80fa378e67c2530e1888f4f53955b3"), SER_NETWORK, PROTOCOL_VERSION);
+            // if need uncomment below line and comment above line
+            // CDataStream finalAlert(ParseHex("047eb569b3852dda7caaf48ed9119dc54f71fba9ac2d2b5eed6fc53e3fb7a2863ed4df63725366bcb32dcc0633151a008abb80fa378e67c2530e1888f4f53955b3"), SER_NETWORK, PROTOCOL_VERSION);
             connman->PushMessage(pfrom, CNetMsgMaker(nSendVersion).Make("alert", finalAlert));
         }
 
@@ -1943,8 +1945,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             }
 
             if (State(pfrom->GetId())->fWantsCmpctWitness == (nCMPCTBLOCKVersion == 2)) // ignore later version announces
-//                State(pfrom->GetId())->fPreferHeaderAndIDs = fAnnounceUsingCMPCTBLOCK;
-                  State(pfrom->GetId())->fPreferHeaderAndIDs = true;
+                //                State(pfrom->GetId())->fPreferHeaderAndIDs = fAnnounceUsingCMPCTBLOCK;
+                State(pfrom->GetId())->fPreferHeaderAndIDs = true;
 
             if (!State(pfrom->GetId())->fSupportsDesiredCmpctVersion) {
                 if (pfrom->GetLocalServices() & NODE_WITNESS)
@@ -2697,7 +2699,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // disk-space attacks), but this should be safe due to the
             // protections in the compact block handler -- see related comment
             // in compact block optimistic reconstruction handling.
-//            ProcessNewBlock(chainparams, pblock, /*fForceProcessing=*/true, &fNewBlock);
+            //            ProcessNewBlock(chainparams, pblock, /*fForceProcessing=*/true, &fNewBlock);
             ProcessNewBlockBft(chainparams,pblock,true,&fNewBlock);
             if (fNewBlock) {
                 pfrom->nLastBlockTime = GetTime();
@@ -2711,7 +2713,18 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     {
         std::shared_ptr<CBlockConfirm> confirm = std::make_shared<CBlockConfirm>();
         vRecv >> *confirm;
-        ProcessConfirm(confirm,pfrom);
+        if(ProcessConfirm(confirm,pfrom))
+        {
+            if (!LookupBlockIndex(confirm->Hash())) {
+                HLOG("not have block.......................");
+                // Doesn't connect (or is genesis), instead of DoSing in AcceptBlockHeader, request deeper headers
+                if (!IsInitialBlockDownload())
+                {
+                    HLOG("send get block....................");
+                    connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::GETHEADERS, chainActive.GetLocator(pindexBestHeader), uint256()));
+                }
+            }
+        }
     }
     else if (strCommand == NetMsgType::HEADERS && !fImporting && !fReindex) // Ignore headers received while importing
     {

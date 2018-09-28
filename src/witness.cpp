@@ -8,7 +8,7 @@
 
 #define PRODUCE_NODE_COUNT 6
 
-int64_t block_interval=10;//10s
+int64_t block_interval=2;//10s
 int64_t new_round_begin_time=0;
 bool round_generated=false;
 uint160 local_address;
