@@ -41,6 +41,7 @@ const char *SENDCMPCT="sendcmpct";
 const char *CMPCTBLOCK="cmpctblock";
 const char *GETBLOCKTXN="getblocktxn";
 const char *BLOCKTXN="blocktxn";
+const char *CONFIRM="confirm";
 } // namespace NetMsgType
 
 /** All known message types. Keep this in the same order as the list of
@@ -73,6 +74,7 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::CMPCTBLOCK,
     NetMsgType::GETBLOCKTXN,
     NetMsgType::BLOCKTXN,
+    NetMsgType::CONFIRM,
 };
 const static std::vector<std::string> allNetMessageTypesVec(allNetMessageTypes, allNetMessageTypes+ARRAYLEN(allNetMessageTypes));
 
@@ -196,7 +198,12 @@ std::string CInv::ToString() const
         return strprintf("0x%08x %s", type, hash.ToString());
     }
 }
-
+CConfirm::CConfirm()
+{
+    hash.SetNull();
+    confirm = 0;
+}
+CConfirm::CConfirm(const uint256& hashIn,u_char confirmIn):hash(hashIn),confirm(confirmIn){}
 const std::vector<std::string> &getAllNetMessageTypes()
 {
     return allNetMessageTypesVec;

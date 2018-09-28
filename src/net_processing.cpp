@@ -2672,16 +2672,32 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // disk-space attacks), but this should be safe due to the
             // protections in the compact block handler -- see related comment
             // in compact block optimistic reconstruction handling.
-            ProcessNewBlock(chainparams, pblock, /*fForceProcessing=*/true, &fNewBlock);
+            bool flag=ProcessNewBlockk(chainparams, pblock, /*fForceProcessing=*/true, &fNewBlock);
             if (fNewBlock) {
                 pfrom->nLastBlockTime = GetTime();
             } else {
                 LOCK(cs_main);
                 mapBlockSource.erase(pblock->GetHash());
             }
+
+            u_char confirmflag;
+            uint256 pblockhash=pblock->GetHash();
+            if(flag)
+            {
+                confirmflag=1;mempool.bolckCountMap.insert(std::make_pair(pblockhash,1));
+            }
+            else
+            {
+                confirmflag=0;mempool.bolckCountMap.insert(std::make_pair(pblockhash,0));
+            }
+            mempool.bolckConfirmMap.insert(std::make_pair(pblock,chainparams));
+            CConfirm confirm(pblockhash,confirmflag);
+            connman->ForEachNode([&](CNode* pnode)
+            {
+                connman->PushMessage(pnode,msgMaker.Make(NetMsgType::CONFIRM,confirm));
+            });
         }
     }
-
 
     else if (strCommand == NetMsgType::HEADERS && !fImporting && !fReindex) // Ignore headers received while importing
     {

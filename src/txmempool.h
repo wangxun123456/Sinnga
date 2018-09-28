@@ -26,7 +26,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/signals2/signal.hpp>
-
+#include <ChainParams.h>
 class CBlockIndex;
 
 /** Fake height value used in Coin to signify they are only in the memory pool (since 0.8) */
@@ -518,7 +518,8 @@ private:
 public:
     indirectmap<COutPoint, const CTransaction*> mapNextTx GUARDED_BY(cs);
     std::map<uint256, CAmount> mapDeltas;
-
+    std::map<uint256, u_char>  bolckCountMap;
+    std::map<std::shared_ptr<const CBlock>,CChainParams>bolckConfirmMap;
     /** Create a new CTxMemPool.
      */
     explicit CTxMemPool(CBlockPolicyEstimator* estimator = nullptr);

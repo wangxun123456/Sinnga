@@ -238,6 +238,7 @@ extern const char *GETBLOCKTXN;
  * @since protocol version 70014 as described by BIP 152
  */
 extern const char *BLOCKTXN;
+extern const char *CONFIRM;
 };
 
 /* Get a vector of all valid message types (see above) */
@@ -407,5 +408,24 @@ public:
     int type;
     uint256 hash;
 };
+class CConfirm
+{
+public:
+    CConfirm();
+    CConfirm(const uint256& hashIn,u_char confirmIn);
 
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
+        READWRITE(hash);
+        READWRITE(confirm);
+    }
+
+    // TODO: make private (improves encapsulation)
+public:
+    uint256 hash;
+    u_char  confirm;
+};
 #endif // BITCOIN_PROTOCOL_H

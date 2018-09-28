@@ -121,3 +121,9 @@ GPATH
 GRTAGS
 GTAGS
 install.sh
+
+# Qt creator project
+*.config
+*.creator
+*.files
+*.includes

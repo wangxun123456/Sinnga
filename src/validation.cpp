@@ -3564,7 +3564,33 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 
     return true;
 }
+bool ProcessNewBlockk(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
+{
+    AssertLockNotHeld(cs_main);
 
+    {
+        CBlockIndex *pindex = nullptr;
+        if (fNewBlock) *fNewBlock = false;
+        CValidationState state;
+        // Ensure that CheckBlock() passes before calling AcceptBlock, as
+        // belt-and-suspenders.
+        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
+
+        LOCK(cs_main);
+
+        if (ret) {
+            // Store to disk
+            ret = g_chainstate.AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+        }
+        if (!ret) {
+            GetMainSignals().BlockChecked(*pblock, state);
+            return error("%s: AcceptBlock FAILED (%s)", __func__, FormatStateMessage(state));
+        }
+    }
+
+    NotifyHeaderTip();
+    return true;
+}
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     AssertLockHeld(cs_main);
