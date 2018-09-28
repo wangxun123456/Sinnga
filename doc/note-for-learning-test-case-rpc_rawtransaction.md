@@ -22,6 +22,6 @@
     12477 pts/2    SLl+   1:18 /home/hunter/bitcoin/src/bitcoind -datadir=/tmp/test4o6ctbl2/node1 -logtimemicros -debug -debugexclude=libevent -debugexclude=leveldb -mocktime=0 -uacomment=testnode1 -addresstype=legacy
     12478 pts/2    SLl+   1:18 /home/hunter/bitcoin/src/bitcoind -datadir=/tmp/test4o6ctbl2/node2 -logtimemicros -debug -debugexclude=libevent -debugexclude=leveldb -mocktime=0 -uacomment=testnode2 -addresstype=legacy
   
-  that makes us to be easy to distinguish which pid which bitciond node has, whne test case call RPC createrawtransaction on node 0, we need attach to pid 12476 for debugging.
+  that makes us to be easy to distinguish which pid which bitciond node has, when test case call RPC createrawtransaction on node 0, we need attach to pid 12476 for debugging c++ source code.
 
 4.   
