@@ -1949,9 +1949,9 @@ UniValue omni_gettransaction(const UniValue& params, bool fHelp)
     return txobj;
 }
 
-UniValue omni_listtransactions(const UniValue& params, bool fHelp)
+UniValue omni_listtransactions(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() > 5)
+    if (request.fHelp || request.params.size() > 5)
         throw runtime_error(
             "omni_listtransactions ( \"address\" count skip startblock endblock )\n"
             "\nList wallet transactions, optionally filtered by an address and block boundaries.\n"
@@ -1986,24 +1986,26 @@ UniValue omni_listtransactions(const UniValue& params, bool fHelp)
 
     // obtains parameters - default all wallet addresses & last 10 transactions
     std::string addressParam;
-    if (params.size() > 0) {
-        if (("*" != params[0].get_str()) && ("" != params[0].get_str())) addressParam = params[0].get_str();
+    if (request.params.size() > 0) {
+        if (("*" != request.params[0].get_str()) && ("" != request.params[0].get_str())) addressParam = request.params[0].get_str();
     }
     int64_t nCount = 10;
-    if (params.size() > 1) nCount = params[1].get_int64();
+    if (request.params.size() > 1) nCount = request.params[1].get_int64();
     if (nCount < 0) throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative count");
     int64_t nFrom = 0;
-    if (params.size() > 2) nFrom = params[2].get_int64();
+    if (request.params.size() > 2) nFrom = request.params[2].get_int64();
     if (nFrom < 0) throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative from");
     int64_t nStartBlock = 0;
-    if (params.size() > 3) nStartBlock = params[3].get_int64();
+    if (request.params.size() > 3) nStartBlock = request.params[3].get_int64();
     if (nStartBlock < 0) throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative start block");
     int64_t nEndBlock = 999999999;
-    if (params.size() > 4) nEndBlock = params[4].get_int64();
+    if (request.params.size() > 4) nEndBlock = request.params[4].get_int64();
     if (nEndBlock < 0) throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative end block");
 
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
     // obtain a sorted list of Omni layer wallet transactions (including STO receipts and pending)
-    std::map<std::string,uint256> walletTransactions = FetchWalletOmniTransactions(nFrom+nCount, nStartBlock, nEndBlock);
+    std::map<std::string,uint256> walletTransactions = FetchWalletOmniTransactions(pwallet, nFrom+nCount, nStartBlock, nEndBlock);
 
     // reverse iterate over (now ordered) transactions and populate RPC objects for each one
     UniValue response(UniValue::VARR);

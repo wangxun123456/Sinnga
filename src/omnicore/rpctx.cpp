@@ -35,9 +35,9 @@ using std::runtime_error;
 using namespace mastercore;
 
 
-UniValue omni_funded_send(const UniValue& params, bool fHelp)
+UniValue omni_funded_send(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 5)
+    if (request.fHelp || request.params.size() != 5)
         throw runtime_error(
             "omni_funded_send \"fromaddress\" \"toaddress\" propertyid \"amount\" \"feeaddress\"\n"
 
@@ -61,11 +61,11 @@ UniValue omni_funded_send(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = ParseAddress(params[1]);
-    uint32_t propertyId = ParsePropertyId(params[2]);
-    int64_t amount = ParseAmount(params[3], isPropertyDivisible(propertyId));
-    std::string feeAddress = ParseAddress(params[4]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = ParseAddress(request.params[1]);
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
+    int64_t amount = ParseAmount(request.params[3], isPropertyDivisible(propertyId));
+    std::string feeAddress = ParseAddress(request.params[4]);
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -84,9 +84,9 @@ UniValue omni_funded_send(const UniValue& params, bool fHelp)
     return retTxid.ToString();
 }
 
-UniValue omni_funded_sendall(const UniValue& params, bool fHelp)
+UniValue omni_funded_sendall(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 4)
+    if (request.fHelp || request.params.size() != 4)
         throw runtime_error(
             "omni_funded_sendall \"fromaddress\" \"toaddress\" ecosystem \"feeaddress\"\n"
 
@@ -109,10 +109,10 @@ UniValue omni_funded_sendall(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = ParseAddress(params[1]);
-    uint8_t ecosystem = ParseEcosystem(params[2]);
-    std::string feeAddress = ParseAddress(params[3]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = ParseAddress(request.params[1]);
+    uint8_t ecosystem = ParseEcosystem(request.params[2]);
+    std::string feeAddress = ParseAddress(request.params[3]);
 
     // create a payload for the transaction
     std::vector<unsigned char> payload = CreatePayload_SendAll(ecosystem);
@@ -127,9 +127,9 @@ UniValue omni_funded_sendall(const UniValue& params, bool fHelp)
     return retTxid.ToString();
 }
 
-UniValue omni_sendrawtx(const UniValue& params, bool fHelp)
+UniValue omni_sendrawtx(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (request.fHelp || request.params.size() < 2 || request.params.size() > 5)
         throw runtime_error(
             "omni_sendrawtx \"fromaddress\" \"rawtransaction\" ( \"referenceaddress\" \"redeemaddress\" \"referenceamount\" )\n"
             "\nBroadcasts a raw Omni Layer transaction.\n"
@@ -146,16 +146,18 @@ UniValue omni_sendrawtx(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_sendrawtx", "\"1MCHESTptvd2LnNp7wmr2sGTpRomteAkq8\", \"000000000000000100000000017d7840\", \"1EqTta1Rt8ixAA32DuC29oukbsSWU62qAV\"")
         );
 
-    std::string fromAddress = ParseAddress(params[0]);
-    std::vector<unsigned char> data = ParseHexV(params[1], "raw transaction");
-    std::string toAddress = (params.size() > 2) ? ParseAddressOrEmpty(params[2]): "";
-    std::string redeemAddress = (params.size() > 3) ? ParseAddressOrEmpty(params[3]): "";
-    int64_t referenceAmount = (params.size() > 4) ? ParseAmount(params[4], true): 0;
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::vector<unsigned char> data = ParseHexV(request.params[1], "raw transaction");
+    std::string toAddress = (request.params.size() > 2) ? ParseAddressOrEmpty(request.params[2]): "";
+    std::string redeemAddress = (request.params.size() > 3) ? ParseAddressOrEmpty(request.params[3]): "";
+    int64_t referenceAmount = (request.params.size() > 4) ? ParseAmount(request.params[4], true): 0;
 
     //some sanity checking of the data supplied?
     uint256 newTX;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, toAddress, redeemAddress, referenceAmount, data, newTX, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, toAddress, redeemAddress, referenceAmount, data, newTX, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -169,9 +171,9 @@ UniValue omni_sendrawtx(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_send(const UniValue& params, bool fHelp)
+UniValue omni_send(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() < 4 || params.size() > 6)
+    if (request.fHelp || request.params.size() < 4 || request.params.size() > 6)
         throw runtime_error(
             "omni_send \"fromaddress\" \"toaddress\" propertyid \"amount\" ( \"redeemaddress\" \"referenceamount\" )\n"
 
@@ -194,12 +196,12 @@ UniValue omni_send(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = ParseAddress(params[1]);
-    uint32_t propertyId = ParsePropertyId(params[2]);
-    int64_t amount = ParseAmount(params[3], isPropertyDivisible(propertyId));
-    std::string redeemAddress = (params.size() > 4 && !ParseText(params[4]).empty()) ? ParseAddress(params[4]): "";
-    int64_t referenceAmount = (params.size() > 5) ? ParseAmount(params[5], true): 0;
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = ParseAddress(request.params[1]);
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
+    int64_t amount = ParseAmount(request.params[3], isPropertyDivisible(propertyId));
+    std::string redeemAddress = (request.params.size() > 4 && !ParseText(request.params[4]).empty()) ? ParseAddress(request.params[4]): "";
+    int64_t referenceAmount = (request.params.size() > 5) ? ParseAmount(request.params[5], true): 0;
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -212,7 +214,9 @@ UniValue omni_send(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, toAddress, redeemAddress, referenceAmount, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, toAddress, redeemAddress, referenceAmount, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -227,9 +231,9 @@ UniValue omni_send(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendall(const UniValue& params, bool fHelp)
+UniValue omni_sendall(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() < 3 || params.size() > 5)
+    if (request.fHelp || request.params.size() < 3 || request.params.size() > 5)
         throw runtime_error(
             "omni_sendall \"fromaddress\" \"toaddress\" ecosystem ( \"redeemaddress\" \"referenceamount\" )\n"
 
@@ -251,11 +255,11 @@ UniValue omni_sendall(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = ParseAddress(params[1]);
-    uint8_t ecosystem = ParseEcosystem(params[2]);
-    std::string redeemAddress = (params.size() > 3 && !ParseText(params[3]).empty()) ? ParseAddress(params[3]): "";
-    int64_t referenceAmount = (params.size() > 4) ? ParseAmount(params[4], true): 0;
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = ParseAddress(request.params[1]);
+    uint8_t ecosystem = ParseEcosystem(request.params[2]);
+    std::string redeemAddress = (request.params.size() > 3 && !ParseText(request.params[3]).empty()) ? ParseAddress(request.params[3]): "";
+    int64_t referenceAmount = (request.params.size() > 4) ? ParseAmount(request.params[4], true): 0;
 
     // perform checks
     RequireSaneReferenceAmount(referenceAmount);
@@ -266,7 +270,9 @@ UniValue omni_sendall(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, toAddress, redeemAddress, referenceAmount, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, toAddress, redeemAddress, referenceAmount, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -281,9 +287,9 @@ UniValue omni_sendall(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_senddexsell(const UniValue& params, bool fHelp)
+UniValue omni_senddexsell(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 7)
+    if (request.fHelp || request.params.size() != 7)
         throw runtime_error(
             "omni_senddexsell \"fromaddress\" propertyidforsale \"amountforsale\" \"amountdesired\" paymentwindow minacceptfee action\n"
 
@@ -308,20 +314,20 @@ UniValue omni_senddexsell(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyIdForSale = ParsePropertyId(params[1]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyIdForSale = ParsePropertyId(request.params[1]);
     int64_t amountForSale = 0; // depending on action
     int64_t amountDesired = 0; // depending on action
     uint8_t paymentWindow = 0; // depending on action
     int64_t minAcceptFee = 0;  // depending on action
-    uint8_t action = ParseDExAction(params[6]);
+    uint8_t action = ParseDExAction(request.params[6]);
 
     // perform conversions
     if (action <= CMPTransaction::UPDATE) { // actions 3 permit zero values, skip check
-        amountForSale = ParseAmount(params[2], true); // TMSC/MSC is divisible
-        amountDesired = ParseAmount(params[3], true); // BTC is divisible
-        paymentWindow = ParseDExPaymentWindow(params[4]);
-        minAcceptFee = ParseDExFee(params[5]);
+        amountForSale = ParseAmount(request.params[2], true); // TMSC/MSC is divisible
+        amountDesired = ParseAmount(request.params[3], true); // BTC is divisible
+        paymentWindow = ParseDExPaymentWindow(request.params[4]);
+        minAcceptFee = ParseDExFee(request.params[5]);
     }
 
     // perform checks
@@ -354,7 +360,9 @@ UniValue omni_senddexsell(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -370,10 +378,10 @@ UniValue omni_senddexsell(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
+UniValue omni_senddexaccept(const JSONRPCRequest& request)
 {
 #if 0   // TODO zhangzf
-    if (fHelp || params.size() < 4 || params.size() > 5)
+    if (request.fHelp || request.params.size() < 4 || request.params.size() > 5)
         throw runtime_error(
             "omni_senddexaccept \"fromaddress\" \"toaddress\" propertyid \"amount\" ( override )\n"
 
@@ -395,11 +403,11 @@ UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = ParseAddress(params[1]);
-    uint32_t propertyId = ParsePropertyId(params[2]);
-    int64_t amount = ParseAmount(params[3], true); // MSC/TMSC is divisible
-    bool override = (params.size() > 4) ? params[4].get_bool(): false;
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = ParseAddress(request.params[1]);
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
+    int64_t amount = ParseAmount(request.params[3], true); // MSC/TMSC is divisible
+    bool override = (request.params.size() > 4) ? request.params[4].get_bool(): false;
 
     // perform checks
     RequirePrimaryToken(propertyId);
@@ -434,7 +442,9 @@ UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, toAddress, "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, toAddress, "", 0, payload, txid, rawHex, autoCommit);
 
 #ifdef ENABLE_WALLET
     // set the custom fee back to original
@@ -455,9 +465,9 @@ UniValue omni_senddexaccept(const UniValue& params, bool fHelp)
     return 0;   // zhangzf delete
 }
 
-UniValue omni_sendissuancecrowdsale(const UniValue& params, bool fHelp)
+UniValue omni_sendissuancecrowdsale(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 14)
+    if (request.fHelp || request.params.size() != 14)
         throw runtime_error(
             "omni_sendissuancecrowdsale \"fromaddress\" ecosystem type previousid \"category\" \"subcategory\" \"name\" \"url\" \"data\" propertyiddesired tokensperunit deadline ( earlybonus issuerpercentage )\n"
 
@@ -488,20 +498,20 @@ UniValue omni_sendissuancecrowdsale(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint8_t ecosystem = ParseEcosystem(params[1]);
-    uint16_t type = ParsePropertyType(params[2]);
-    uint32_t previousId = ParsePreviousPropertyId(params[3]);
-    std::string category = ParseText(params[4]);
-    std::string subcategory = ParseText(params[5]);
-    std::string name = ParseText(params[6]);
-    std::string url = ParseText(params[7]);
-    std::string data = ParseText(params[8]);
-    uint32_t propertyIdDesired = ParsePropertyId(params[9]);
-    int64_t numTokens = ParseAmount(params[10], type);
-    int64_t deadline = ParseDeadline(params[11]);
-    uint8_t earlyBonus = ParseEarlyBirdBonus(params[12]);
-    uint8_t issuerPercentage = ParseIssuerBonus(params[13]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint8_t ecosystem = ParseEcosystem(request.params[1]);
+    uint16_t type = ParsePropertyType(request.params[2]);
+    uint32_t previousId = ParsePreviousPropertyId(request.params[3]);
+    std::string category = ParseText(request.params[4]);
+    std::string subcategory = ParseText(request.params[5]);
+    std::string name = ParseText(request.params[6]);
+    std::string url = ParseText(request.params[7]);
+    std::string data = ParseText(request.params[8]);
+    uint32_t propertyIdDesired = ParsePropertyId(request.params[9]);
+    int64_t numTokens = ParseAmount(request.params[10], type);
+    int64_t deadline = ParseDeadline(request.params[11]);
+    uint8_t earlyBonus = ParseEarlyBirdBonus(request.params[12]);
+    uint8_t issuerPercentage = ParseIssuerBonus(request.params[13]);
 
     // perform checks
     RequirePropertyName(name);
@@ -514,7 +524,9 @@ UniValue omni_sendissuancecrowdsale(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -528,9 +540,9 @@ UniValue omni_sendissuancecrowdsale(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendissuancefixed(const UniValue& params, bool fHelp)
+UniValue omni_sendissuancefixed(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 10)
+    if (request.fHelp || request.params.size() != 10)
         throw runtime_error(
             "omni_sendissuancefixed \"fromaddress\" ecosystem type previousid \"category\" \"subcategory\" \"name\" \"url\" \"data\" \"amount\"\n"
 
@@ -557,16 +569,16 @@ UniValue omni_sendissuancefixed(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint8_t ecosystem = ParseEcosystem(params[1]);
-    uint16_t type = ParsePropertyType(params[2]);
-    uint32_t previousId = ParsePreviousPropertyId(params[3]);
-    std::string category = ParseText(params[4]);
-    std::string subcategory = ParseText(params[5]);
-    std::string name = ParseText(params[6]);
-    std::string url = ParseText(params[7]);
-    std::string data = ParseText(params[8]);
-    int64_t amount = ParseAmount(params[9], type);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint8_t ecosystem = ParseEcosystem(request.params[1]);
+    uint16_t type = ParsePropertyType(request.params[2]);
+    uint32_t previousId = ParsePreviousPropertyId(request.params[3]);
+    std::string category = ParseText(request.params[4]);
+    std::string subcategory = ParseText(request.params[5]);
+    std::string name = ParseText(request.params[6]);
+    std::string url = ParseText(request.params[7]);
+    std::string data = ParseText(request.params[8]);
+    int64_t amount = ParseAmount(request.params[9], type);
 
     // perform checks
     RequirePropertyName(name);
@@ -577,7 +589,9 @@ UniValue omni_sendissuancefixed(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -591,9 +605,9 @@ UniValue omni_sendissuancefixed(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendissuancemanaged(const UniValue& params, bool fHelp)
+UniValue omni_sendissuancemanaged(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 9)
+    if (request.fHelp || request.params.size() != 9)
         throw runtime_error(
             "omni_sendissuancemanaged \"fromaddress\" ecosystem type previousid \"category\" \"subcategory\" \"name\" \"url\" \"data\"\n"
 
@@ -619,15 +633,15 @@ UniValue omni_sendissuancemanaged(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint8_t ecosystem = ParseEcosystem(params[1]);
-    uint16_t type = ParsePropertyType(params[2]);
-    uint32_t previousId = ParsePreviousPropertyId(params[3]);
-    std::string category = ParseText(params[4]);
-    std::string subcategory = ParseText(params[5]);
-    std::string name = ParseText(params[6]);
-    std::string url = ParseText(params[7]);
-    std::string data = ParseText(params[8]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint8_t ecosystem = ParseEcosystem(request.params[1]);
+    uint16_t type = ParsePropertyType(request.params[2]);
+    uint32_t previousId = ParsePreviousPropertyId(request.params[3]);
+    std::string category = ParseText(request.params[4]);
+    std::string subcategory = ParseText(request.params[5]);
+    std::string name = ParseText(request.params[6]);
+    std::string url = ParseText(request.params[7]);
+    std::string data = ParseText(request.params[8]);
 
     // perform checks
     RequirePropertyName(name);
@@ -638,7 +652,9 @@ UniValue omni_sendissuancemanaged(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -652,9 +668,9 @@ UniValue omni_sendissuancemanaged(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendsto(const UniValue& params, bool fHelp)
+UniValue omni_sendsto(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() < 3 || params.size() > 5)
+    if (request.fHelp || request.params.size() < 3 || request.params.size() > 5)
         throw runtime_error(
             "omni_sendsto \"fromaddress\" propertyid \"amount\" ( \"redeemaddress\" distributionproperty )\n"
 
@@ -676,11 +692,11 @@ UniValue omni_sendsto(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyId = ParsePropertyId(params[1]);
-    int64_t amount = ParseAmount(params[2], isPropertyDivisible(propertyId));
-    std::string redeemAddress = (params.size() > 3 && !ParseText(params[3]).empty()) ? ParseAddress(params[3]): "";
-    uint32_t distributionPropertyId = (params.size() > 4) ? ParsePropertyId(params[4]) : propertyId;
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[1]);
+    int64_t amount = ParseAmount(request.params[2], isPropertyDivisible(propertyId));
+    std::string redeemAddress = (request.params.size() > 3 && !ParseText(request.params[3]).empty()) ? ParseAddress(request.params[3]): "";
+    uint32_t distributionPropertyId = (request.params.size() > 4) ? ParsePropertyId(request.params[4]) : propertyId;
 
     // perform checks
     RequireBalance(fromAddress, propertyId, amount);
@@ -691,7 +707,9 @@ UniValue omni_sendsto(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", redeemAddress, 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", redeemAddress, 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -706,9 +724,9 @@ UniValue omni_sendsto(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendgrant(const UniValue& params, bool fHelp)
+UniValue omni_sendgrant(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() < 4 || params.size() > 5)
+    if (request.fHelp || request.params.size() < 4 || request.params.size() > 5)
         throw runtime_error(
             "omni_sendgrant \"fromaddress\" \"toaddress\" propertyid \"amount\" ( \"memo\" )\n"
 
@@ -730,11 +748,11 @@ UniValue omni_sendgrant(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = !ParseText(params[1]).empty() ? ParseAddress(params[1]): "";
-    uint32_t propertyId = ParsePropertyId(params[2]);
-    int64_t amount = ParseAmount(params[3], isPropertyDivisible(propertyId));
-    std::string memo = (params.size() > 4) ? ParseText(params[4]): "";
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = !ParseText(request.params[1]).empty() ? ParseAddress(request.params[1]): "";
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
+    int64_t amount = ParseAmount(request.params[3], isPropertyDivisible(propertyId));
+    std::string memo = (request.params.size() > 4) ? ParseText(request.params[4]): "";
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -747,7 +765,9 @@ UniValue omni_sendgrant(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, toAddress, "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, toAddress, "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -761,9 +781,9 @@ UniValue omni_sendgrant(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendrevoke(const UniValue& params, bool fHelp)
+UniValue omni_sendrevoke(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() < 3 || params.size() > 4)
+    if (request.fHelp || request.params.size() < 3 || request.params.size() > 4)
         throw runtime_error(
             "omni_sendrevoke \"fromaddress\" propertyid \"amount\" ( \"memo\" )\n"
 
@@ -784,10 +804,10 @@ UniValue omni_sendrevoke(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyId = ParsePropertyId(params[1]);
-    int64_t amount = ParseAmount(params[2], isPropertyDivisible(propertyId));
-    std::string memo = (params.size() > 3) ? ParseText(params[3]): "";
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[1]);
+    int64_t amount = ParseAmount(request.params[2], isPropertyDivisible(propertyId));
+    std::string memo = (request.params.size() > 3) ? ParseText(request.params[3]): "";
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -801,7 +821,9 @@ UniValue omni_sendrevoke(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -815,9 +837,9 @@ UniValue omni_sendrevoke(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendclosecrowdsale(const UniValue& params, bool fHelp)
+UniValue omni_sendclosecrowdsale(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_sendclosecrowdsale \"fromaddress\" propertyid\n"
 
@@ -836,8 +858,8 @@ UniValue omni_sendclosecrowdsale(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyId = ParsePropertyId(params[1]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[1]);
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -851,7 +873,9 @@ UniValue omni_sendclosecrowdsale(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -865,9 +889,9 @@ UniValue omni_sendclosecrowdsale(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue trade_MP(const UniValue& params, bool fHelp)
+UniValue trade_MP(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 6)
+    if (request.fHelp || request.params.size() != 6)
         throw runtime_error(
             "trade_MP \"fromaddress\" propertyidforsale \"amountforsale\" propertiddesired \"amountdesired\" action\n"
             "\nNote: this command is depreciated, and was replaced by:\n"
@@ -878,58 +902,58 @@ UniValue trade_MP(const UniValue& params, bool fHelp)
         );
 
     UniValue values(UniValue::VARR);
-    uint8_t action = ParseMetaDExAction(params[5]);
+    uint8_t action = ParseMetaDExAction(request.params[5]);
 
     // Forward to the new commands, based on action value
     switch (action) {
         case CMPTransaction::ADD:
         {
-            values.push_back(params[0]); // fromAddress
-            values.push_back(params[1]); // propertyIdForSale
-            values.push_back(params[2]); // amountForSale
-            values.push_back(params[3]); // propertyIdDesired
-            values.push_back(params[4]); // amountDesired
-            return omni_sendtrade(values, fHelp);
+            values.push_back(request.params[0]); // fromAddress
+            values.push_back(request.params[1]); // propertyIdForSale
+            values.push_back(request.params[2]); // amountForSale
+            values.push_back(request.params[3]); // propertyIdDesired
+            values.push_back(request.params[4]); // amountDesired
+            return omni_sendtrade(request);
         }
         case CMPTransaction::CANCEL_AT_PRICE:
         {
-            values.push_back(params[0]); // fromAddress
-            values.push_back(params[1]); // propertyIdForSale
-            values.push_back(params[2]); // amountForSale
-            values.push_back(params[3]); // propertyIdDesired
-            values.push_back(params[4]); // amountDesired
-            return omni_sendcanceltradesbyprice(values, fHelp);
+            values.push_back(request.params[0]); // fromAddress
+            values.push_back(request.params[1]); // propertyIdForSale
+            values.push_back(request.params[2]); // amountForSale
+            values.push_back(request.params[3]); // propertyIdDesired
+            values.push_back(request.params[4]); // amountDesired
+            return omni_sendcanceltradesbyprice(request);
         }
         case CMPTransaction::CANCEL_ALL_FOR_PAIR:
         {
-            values.push_back(params[0]); // fromAddress
-            values.push_back(params[1]); // propertyIdForSale
-            values.push_back(params[3]); // propertyIdDesired
-            return omni_sendcanceltradesbypair(values, fHelp);
+            values.push_back(request.params[0]); // fromAddress
+            values.push_back(request.params[1]); // propertyIdForSale
+            values.push_back(request.params[3]); // propertyIdDesired
+            return omni_sendcanceltradesbypair(request);
         }
         case CMPTransaction::CANCEL_EVERYTHING:
         {
             uint8_t ecosystem = 0;
-            if (isMainEcosystemProperty(params[1].get_int64())
-                    && isMainEcosystemProperty(params[3].get_int64())) {
+            if (isMainEcosystemProperty(request.params[1].get_int64())
+                    && isMainEcosystemProperty(request.params[3].get_int64())) {
                 ecosystem = OMNI_PROPERTY_MSC;
             }
-            if (isTestEcosystemProperty(params[1].get_int64())
-                    && isTestEcosystemProperty(params[3].get_int64())) {
+            if (isTestEcosystemProperty(request.params[1].get_int64())
+                    && isTestEcosystemProperty(request.params[3].get_int64())) {
                 ecosystem = OMNI_PROPERTY_TMSC;
             }
-            values.push_back(params[0]); // fromAddress
+            values.push_back(request.params[0]); // fromAddress
             values.push_back(ecosystem);
-            return omni_sendcancelalltrades(values, fHelp);
+            return omni_sendcancelalltrades(request);
         }
     }
 
     throw JSONRPCError(RPC_TYPE_ERROR, "Invalid action (1,2,3,4 only)");
 }
 
-UniValue omni_sendtrade(const UniValue& params, bool fHelp)
+UniValue omni_sendtrade(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 5)
+    if (request.fHelp || request.params.size() != 5)
         throw runtime_error(
             "omni_sendtrade \"fromaddress\" propertyidforsale \"amountforsale\" propertiddesired \"amountdesired\"\n"
 
@@ -951,11 +975,11 @@ UniValue omni_sendtrade(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyIdForSale = ParsePropertyId(params[1]);
-    int64_t amountForSale = ParseAmount(params[2], isPropertyDivisible(propertyIdForSale));
-    uint32_t propertyIdDesired = ParsePropertyId(params[3]);
-    int64_t amountDesired = ParseAmount(params[4], isPropertyDivisible(propertyIdDesired));
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyIdForSale = ParsePropertyId(request.params[1]);
+    int64_t amountForSale = ParseAmount(request.params[2], isPropertyDivisible(propertyIdForSale));
+    uint32_t propertyIdDesired = ParsePropertyId(request.params[3]);
+    int64_t amountDesired = ParseAmount(request.params[4], isPropertyDivisible(propertyIdDesired));
 
     // perform checks
     RequireExistingProperty(propertyIdForSale);
@@ -970,7 +994,9 @@ UniValue omni_sendtrade(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -985,9 +1011,9 @@ UniValue omni_sendtrade(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendcanceltradesbyprice(const UniValue& params, bool fHelp)
+UniValue omni_sendcanceltradesbyprice(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 5)
+    if (request.fHelp || request.params.size() != 5)
         throw runtime_error(
             "omni_sendcanceltradesbyprice \"fromaddress\" propertyidforsale \"amountforsale\" propertiddesired \"amountdesired\"\n"
 
@@ -1009,11 +1035,11 @@ UniValue omni_sendcanceltradesbyprice(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyIdForSale = ParsePropertyId(params[1]);
-    int64_t amountForSale = ParseAmount(params[2], isPropertyDivisible(propertyIdForSale));
-    uint32_t propertyIdDesired = ParsePropertyId(params[3]);
-    int64_t amountDesired = ParseAmount(params[4], isPropertyDivisible(propertyIdDesired));
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyIdForSale = ParsePropertyId(request.params[1]);
+    int64_t amountForSale = ParseAmount(request.params[2], isPropertyDivisible(propertyIdForSale));
+    uint32_t propertyIdDesired = ParsePropertyId(request.params[3]);
+    int64_t amountDesired = ParseAmount(request.params[4], isPropertyDivisible(propertyIdDesired));
 
     // perform checks
     RequireExistingProperty(propertyIdForSale);
@@ -1028,7 +1054,9 @@ UniValue omni_sendcanceltradesbyprice(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1043,9 +1071,9 @@ UniValue omni_sendcanceltradesbyprice(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendcanceltradesbypair(const UniValue& params, bool fHelp)
+UniValue omni_sendcanceltradesbypair(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 3)
+    if (request.fHelp || request.params.size() != 3)
         throw runtime_error(
             "omni_sendcanceltradesbypair \"fromaddress\" propertyidforsale propertiddesired\n"
 
@@ -1065,9 +1093,9 @@ UniValue omni_sendcanceltradesbypair(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyIdForSale = ParsePropertyId(params[1]);
-    uint32_t propertyIdDesired = ParsePropertyId(params[2]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyIdForSale = ParsePropertyId(request.params[1]);
+    uint32_t propertyIdDesired = ParsePropertyId(request.params[2]);
 
     // perform checks
     RequireExistingProperty(propertyIdForSale);
@@ -1082,7 +1110,9 @@ UniValue omni_sendcanceltradesbypair(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1097,9 +1127,9 @@ UniValue omni_sendcanceltradesbypair(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendcancelalltrades(const UniValue& params, bool fHelp)
+UniValue omni_sendcancelalltrades(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_sendcancelalltrades \"fromaddress\" ecosystem\n"
 
@@ -1118,8 +1148,8 @@ UniValue omni_sendcancelalltrades(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint8_t ecosystem = ParseEcosystem(params[1]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint8_t ecosystem = ParseEcosystem(request.params[1]);
 
     // perform checks
     // TODO: check, if there are matching offers to cancel
@@ -1130,7 +1160,9 @@ UniValue omni_sendcancelalltrades(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1145,9 +1177,9 @@ UniValue omni_sendcancelalltrades(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendchangeissuer(const UniValue& params, bool fHelp)
+UniValue omni_sendchangeissuer(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 3)
+    if (request.fHelp || request.params.size() != 3)
         throw runtime_error(
             "omni_sendchangeissuer \"fromaddress\" \"toaddress\" propertyid\n"
 
@@ -1167,9 +1199,9 @@ UniValue omni_sendchangeissuer(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string toAddress = ParseAddress(params[1]);
-    uint32_t propertyId = ParsePropertyId(params[2]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string toAddress = ParseAddress(request.params[1]);
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -1181,7 +1213,9 @@ UniValue omni_sendchangeissuer(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, toAddress, "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, toAddress, "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1195,9 +1229,9 @@ UniValue omni_sendchangeissuer(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendenablefreezing(const UniValue& params, bool fHelp)
+UniValue omni_sendenablefreezing(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_sendenablefreezing \"fromaddress\" propertyid\n"
 
@@ -1216,8 +1250,8 @@ UniValue omni_sendenablefreezing(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyId = ParsePropertyId(params[1]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[1]);
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -1230,7 +1264,9 @@ UniValue omni_sendenablefreezing(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1244,9 +1280,9 @@ UniValue omni_sendenablefreezing(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_senddisablefreezing(const UniValue& params, bool fHelp)
+UniValue omni_senddisablefreezing(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_senddisablefreezing \"fromaddress\" propertyid\n"
 
@@ -1266,8 +1302,8 @@ UniValue omni_senddisablefreezing(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint32_t propertyId = ParsePropertyId(params[1]);
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[1]);
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -1280,7 +1316,9 @@ UniValue omni_senddisablefreezing(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1294,9 +1332,9 @@ UniValue omni_senddisablefreezing(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendfreeze(const UniValue& params, bool fHelp)
+UniValue omni_sendfreeze(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 4)
+    if (request.fHelp || request.params.size() != 4)
         throw runtime_error(
             "omni_sendfreeze \"fromaddress\" \"toaddress\" propertyid amount \n"
             "\nFreeze an address for a centrally managed token.\n"
@@ -1314,10 +1352,10 @@ UniValue omni_sendfreeze(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string refAddress = ParseAddress(params[1]);
-    uint32_t propertyId = ParsePropertyId(params[2]);
-    int64_t amount = ParseAmount(params[3], isPropertyDivisible(propertyId));
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string refAddress = ParseAddress(request.params[1]);
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
+    int64_t amount = ParseAmount(request.params[3], isPropertyDivisible(propertyId));
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -1331,7 +1369,9 @@ UniValue omni_sendfreeze(const UniValue& params, bool fHelp)
     // Note: no ref address is sent to WalletTxBuilder as the ref address is contained within the payload
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1345,9 +1385,9 @@ UniValue omni_sendfreeze(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendunfreeze(const UniValue& params, bool fHelp)
+UniValue omni_sendunfreeze(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 4)
+    if (request.fHelp || request.params.size() != 4)
         throw runtime_error(
             "omni_sendunfreeze \"fromaddress\" \"toaddress\" propertyid amount \n"
             "\nUnfreezes an address for a centrally managed token.\n"
@@ -1365,10 +1405,10 @@ UniValue omni_sendunfreeze(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    std::string refAddress = ParseAddress(params[1]);
-    uint32_t propertyId = ParsePropertyId(params[2]);
-    int64_t amount = ParseAmount(params[3], isPropertyDivisible(propertyId));
+    std::string fromAddress = ParseAddress(request.params[0]);
+    std::string refAddress = ParseAddress(request.params[1]);
+    uint32_t propertyId = ParsePropertyId(request.params[2]);
+    int64_t amount = ParseAmount(request.params[3], isPropertyDivisible(propertyId));
 
     // perform checks
     RequireExistingProperty(propertyId);
@@ -1382,7 +1422,9 @@ UniValue omni_sendunfreeze(const UniValue& params, bool fHelp)
     // Note: no ref address is sent to WalletTxBuilder as the ref address is contained within the payload
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1396,9 +1438,9 @@ UniValue omni_sendunfreeze(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendactivation(const UniValue& params, bool fHelp)
+UniValue omni_sendactivation(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 4)
+    if (request.fHelp || request.params.size() != 4)
         throw runtime_error(
             "omni_sendactivation \"fromaddress\" featureid block minclientversion\n"
             "\nActivate a protocol feature.\n"
@@ -1416,10 +1458,10 @@ UniValue omni_sendactivation(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint16_t featureId = params[1].get_int();
-    uint32_t activationBlock = params[2].get_int();
-    uint32_t minClientVersion = params[3].get_int();
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint16_t featureId = request.params[1].get_int();
+    uint32_t activationBlock = request.params[2].get_int();
+    uint32_t minClientVersion = request.params[3].get_int();
 
     // create a payload for the transaction
     std::vector<unsigned char> payload = CreatePayload_ActivateFeature(featureId, activationBlock, minClientVersion);
@@ -1427,7 +1469,9 @@ UniValue omni_sendactivation(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1441,9 +1485,9 @@ UniValue omni_sendactivation(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_senddeactivation(const UniValue& params, bool fHelp)
+UniValue omni_senddeactivation(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_senddeactivation \"fromaddress\" featureid\n"
             "\nDeactivate a protocol feature.  For Emergency Use Only.\n"
@@ -1459,8 +1503,8 @@ UniValue omni_senddeactivation(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    uint16_t featureId = params[1].get_int64();
+    std::string fromAddress = ParseAddress(request.params[0]);
+    uint16_t featureId = request.params[1].get_int64();
 
     // create a payload for the transaction
     std::vector<unsigned char> payload = CreatePayload_DeactivateFeature(featureId);
@@ -1468,7 +1512,9 @@ UniValue omni_senddeactivation(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {
@@ -1482,9 +1528,9 @@ UniValue omni_senddeactivation(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue omni_sendalert(const UniValue& params, bool fHelp)
+UniValue omni_sendalert(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 4)
+    if (request.fHelp || request.params.size() != 4)
         throw runtime_error(
             "omni_sendalert \"fromaddress\" alerttype expiryvalue typecheck versioncheck \"message\"\n"
             "\nCreates and broadcasts an Omni Core alert.\n"
@@ -1502,18 +1548,18 @@ UniValue omni_sendalert(const UniValue& params, bool fHelp)
         );
 
     // obtain parameters & info
-    std::string fromAddress = ParseAddress(params[0]);
-    int64_t tempAlertType = params[1].get_int64();
+    std::string fromAddress = ParseAddress(request.params[0]);
+    int64_t tempAlertType = request.params[1].get_int64();
     if (tempAlertType < 1 || 65535 < tempAlertType) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Alert type is out of range");
     }
     uint16_t alertType = static_cast<uint16_t>(tempAlertType);
-    int64_t tempExpiryValue = params[2].get_int64();
+    int64_t tempExpiryValue = request.params[2].get_int64();
     if (tempExpiryValue < 1 || 4294967295LL < tempExpiryValue) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Expiry value is out of range");
     }
     uint32_t expiryValue = static_cast<uint32_t>(tempExpiryValue);
-    std::string alertMessage = ParseText(params[3]);
+    std::string alertMessage = ParseText(request.params[3]);
 
     // create a payload for the transaction
     std::vector<unsigned char> payload = CreatePayload_OmniCoreAlert(alertType, expiryValue, alertMessage);
@@ -1521,7 +1567,9 @@ UniValue omni_sendalert(const UniValue& params, bool fHelp)
     // request the wallet build the transaction (and if needed commit it)
     uint256 txid;
     std::string rawHex;
-    int result = WalletTxBuilder(fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = WalletTxBuilder(pwallet, fromAddress, "", "", 0, payload, txid, rawHex, autoCommit);
 
     // check error and return the txid (or raw hex depending on autocommit)
     if (result != 0) {

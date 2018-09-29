@@ -39,6 +39,7 @@ using mastercore::UseEncodingClassC;
 
 /** Creates and sends a transaction. */
 int WalletTxBuilder(
+        CWallet * const pwallet,
         const std::string& senderAddress,
         const std::string& receiverAddress,
         const std::string& redemptionAddress,
@@ -48,8 +49,6 @@ int WalletTxBuilder(
         std::string& retRawTx,
         bool commit)
 {
-    // TODO zhangzf
-#if 0
 #ifdef ENABLE_WALLET
     if (HasWallets()) return MP_ERR_WALLET_ACCESS;
 
@@ -64,11 +63,10 @@ int WalletTxBuilder(
     int nChangePosInOut = -1;
     std::string strFailReason;
     std::vector<std::pair<CScript, int64_t> > vecSend;
-    CReserveKey reserveKey(pwalletMain);
+    CReserveKey reserveKey(pwallet);
 
     // Next, we set the change address to the sender
-    CBitcoinAddress addr = CBitcoinAddress(senderAddress);
-    coinControl.destChange = addr.Get();
+    coinControl.destChange = DecodeDestination(senderAddress);
 
     // Select the inputs
     if (0 > SelectCoins(senderAddress, coinControl, referenceAmount)) { return MP_INPUTS_INVALID; }
@@ -90,7 +88,7 @@ int WalletTxBuilder(
 
     // Then add a paytopubkeyhash output for the recipient (if needed) - note we do this last as we want this to be the highest vout
     if (!receiverAddress.empty()) {
-        CScript scriptPubKey = GetScriptForDestination(CBitcoinAddress(receiverAddress).Get());
+        CScript scriptPubKey = GetScriptForDestination(DecodeDestination(receiverAddress));
         vecSend.push_back(std::make_pair(scriptPubKey, 0 < referenceAmount ? referenceAmount : GetDustThreshold(scriptPubKey)));
     }
 
@@ -106,27 +104,27 @@ int WalletTxBuilder(
     }
 
     // Ask the wallet to create the transaction (note mining fee determined by Bitcoin Core params)
-    if (!pwalletMain->CreateTransaction(vecRecipients, wtxNew, reserveKey, nFeeRet, nChangePosInOut, strFailReason, &coinControl)) {
+    if (!pwallet->CreateTransaction(vecRecipients, wtxNew, reserveKey, nFeeRet, nChangePosInOut, strFailReason, coinControl)) {
         PrintToLog("%s: ERROR: wallet transaction creation failed: %s\n", __func__, strFailReason);
         return MP_ERR_CREATE_TX;
     }
 
     // If this request is only to create, but not commit the transaction then display it and exit
     if (!commit) {
-        retRawTx = EncodeHexTx(wtxNew);
+        retRawTx = EncodeHexTx(*wtxNew);
         return 0;
     } else {
         // Commit the transaction to the wallet and broadcast)
-        PrintToLog("%s: %s; nFeeRet = %d\n", __func__, wtxNew.ToString(), nFeeRet);
-        if (!pwalletMain->CommitTransaction(wtxNew, reserveKey)) return MP_ERR_COMMIT_TX;
-        retTxid = wtxNew.GetHash();
+        PrintToLog("%s: %s; nFeeRet = %d\n", __func__, wtxNew->ToString(), nFeeRet);
+        CValidationState state;
+        if (!pwallet->CommitTransaction(wtxNew, {}, {}, {}, reserveKey, nullptr, state)) return MP_ERR_COMMIT_TX;
+        retTxid = wtxNew->GetHash();
         return 0;
     }
 #else
     return MP_ERR_WALLET_ACCESS;
 #endif
 
-#endif
 }
 
 #ifdef ENABLE_WALLET
@@ -136,7 +134,6 @@ static void LockUnrelatedCoins(
         const std::set<CTxDestination>& destinations,
         std::vector<COutPoint>& retLockedCoins)
 {
-#if 0   // TODO zhangzf
     if (pwallet == NULL) {
         return;
     }
@@ -149,7 +146,7 @@ static void LockUnrelatedCoins(
 
     for (COutput& output : vCoins) {
         CTxDestination address;
-        const CScript& scriptPubKey = output.tx->vout[output.i].scriptPubKey;
+        const CScript& scriptPubKey = output.tx->tx->vout[output.i].scriptPubKey;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
 
         // don't lock specified coins, but any other
@@ -161,7 +158,6 @@ static void LockUnrelatedCoins(
         pwallet->LockCoin(outpointLocked);
         retLockedCoins.push_back(outpointLocked);
     }
-#endif
 }
 
 /** Unlocks all coins, which were previously locked. */

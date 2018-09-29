@@ -2,6 +2,7 @@
 #define OMNICORE_WALLETTXBUILDER_H
 
 class uint256;
+class CWallet;
 
 #include <stdint.h>
 #include <string>
@@ -11,6 +12,7 @@ class uint256;
  * Creates and sends a transaction.
  */
 int WalletTxBuilder(
+        CWallet * const pwallet,
         const std::string& senderAddress,
         const std::string& receiverAddress,
         const std::string& redemptionAddress,

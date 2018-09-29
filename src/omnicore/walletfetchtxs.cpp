@@ -56,10 +56,9 @@ static unsigned int GetTransactionByteOffset(const uint256& txid)
  *
  * Ignores order in the wallet (which can be skewed by watch addresses) and utilizes block height and position within block.
  */
-std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, int startBlock, int endBlock)
+std::map<std::string, uint256> FetchWalletOmniTransactions(CWallet * const pwallet, unsigned int count, int startBlock, int endBlock)
 {
     std::map<std::string, uint256> mapResponse;
-#if 0   // TODO zhangzf
 #ifdef ENABLE_WALLET
     if (HasWallets()) {
         return mapResponse;
@@ -68,8 +67,8 @@ std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, i
     std::list<CAccountingEntry> acentries;
     CWallet::TxItems txOrdered;
     {
-        LOCK(pwalletMain->cs_wallet);
-        txOrdered = pwalletMain->wtxOrdered;
+        LOCK(pwallet->cs_wallet);
+        txOrdered = pwallet->wtxOrdered;
     }
     // Iterate backwards through wallet transactions until we have count items to return:
     for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it) {
@@ -128,9 +127,9 @@ std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, i
         if (blockHeight < startBlock || blockHeight > endBlock) continue;
         int blockPosition = 0;
         {
-            LOCK(pwalletMain->cs_wallet);
-            std::map<uint256, CWalletTx>::const_iterator walletIt = pwalletMain->mapWallet.find(txHash);
-            if (walletIt != pwalletMain->mapWallet.end()) {
+            LOCK(pwallet->cs_wallet);
+            std::map<uint256, CWalletTx>::const_iterator walletIt = pwallet->mapWallet.find(txHash);
+            if (walletIt != pwallet->mapWallet.end()) {
                 const CWalletTx& wtx = walletIt->second;
                 blockPosition = wtx.nOrderPos;
             }
@@ -140,7 +139,6 @@ std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, i
     }
 #endif
 
-#endif
     return mapResponse;
 }
 

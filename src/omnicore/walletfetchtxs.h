@@ -2,6 +2,7 @@
 #define OMNICORE_WALLETFETCHTXS_H
 
 class uint256;
+class CWallet;
 
 #include <map>
 #include <string>
@@ -9,7 +10,7 @@ class uint256;
 namespace mastercore
 {
 /** Returns an ordered list of Omni transactions that are relevant to the wallet. */
-std::map<std::string, uint256> FetchWalletOmniTransactions(unsigned int count, int startBlock = 0, int endBlock = 999999);
+std::map<std::string, uint256> FetchWalletOmniTransactions(CWallet * const pwallet, unsigned int count, int startBlock = 0, int endBlock = 999999);
 }
 
 #endif // OMNICORE_WALLETFETCHTXS_H
