@@ -152,9 +152,9 @@ bool BalanceToJSON(const std::string& address, uint32_t property, UniValue& bala
 }
 
 // Obtains details of a fee distribution
-UniValue omni_getfeedistribution(const UniValue& params, bool fHelp)
+UniValue omni_getfeedistribution(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 1)
+    if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "omni_getfeedistribution distributionid\n"
             "\nGet the details for a fee distribution.\n"
@@ -179,7 +179,7 @@ UniValue omni_getfeedistribution(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getfeedistribution", "1")
         );
 
-    int id = params[0].get_int();
+    int id = request.params[0].get_int();
 
     int block = 0;
     uint32_t propertyId = 0;
@@ -218,9 +218,9 @@ UniValue omni_getfeedistribution(const UniValue& params, bool fHelp)
 
 // Obtains all fee distributions for a property
 // TODO : Split off code to populate a fee distribution object into a seperate function
-UniValue omni_getfeedistributions(const UniValue& params, bool fHelp)
+UniValue omni_getfeedistributions(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 1)
+    if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "omni_getfeedistributions propertyid\n"
             "\nGet the details of all fee distributions for a property.\n"
@@ -246,7 +246,7 @@ UniValue omni_getfeedistributions(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getfeedistributions", "1")
         );
 
-    uint32_t prop = ParsePropertyId(params[0]);
+    uint32_t prop = ParsePropertyId(request.params[0]);
     RequireExistingProperty(prop);
 
     UniValue response(UniValue::VARR);
@@ -293,9 +293,9 @@ UniValue omni_getfeedistributions(const UniValue& params, bool fHelp)
 }
 
 // Obtains the trigger value for fee distribution for a/all properties
-UniValue omni_getfeetrigger(const UniValue& params, bool fHelp)
+UniValue omni_getfeetrigger(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() > 1)
+    if (request.fHelp || request.params.size() > 1)
         throw runtime_error(
             "omni_getfeetrigger ( propertyid )\n"
             "\nReturns the amount of fees required in the cache to trigger distribution.\n"
@@ -315,8 +315,8 @@ UniValue omni_getfeetrigger(const UniValue& params, bool fHelp)
         );
 
     uint32_t propertyId = 0;
-    if (0 < params.size()) {
-        propertyId = ParsePropertyId(params[0]);
+    if (0 < request.params.size()) {
+        propertyId = ParsePropertyId(request.params[0]);
     }
 
     if (propertyId > 0) {
@@ -343,9 +343,9 @@ UniValue omni_getfeetrigger(const UniValue& params, bool fHelp)
 }
 
 // Provides the fee share the wallet (or specific address) will receive from fee distributions
-UniValue omni_getfeeshare(const UniValue& params, bool fHelp)
+UniValue omni_getfeeshare(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() > 2)
+    if (request.fHelp || request.params.size() > 2)
         throw runtime_error(
             "omni_getfeeshare ( address ecosystem )\n"
             "\nReturns the percentage share of fees distribution applied to the wallet (default) or address (if supplied).\n"
@@ -367,15 +367,15 @@ UniValue omni_getfeeshare(const UniValue& params, bool fHelp)
 
     std::string address;
     uint8_t ecosystem = 1;
-    if (0 < params.size()) {
-        if ("*" != params[0].get_str()) { //ParseAddressOrEmpty doesn't take wildcards
-            address = ParseAddressOrEmpty(params[0]);
+    if (0 < request.params.size()) {
+        if ("*" != request.params[0].get_str()) { //ParseAddressOrEmpty doesn't take wildcards
+            address = ParseAddressOrEmpty(request.params[0]);
         } else {
             address = "*";
         }
     }
-    if (1 < params.size()) {
-        ecosystem = ParseEcosystem(params[1]);
+    if (1 < request.params.size()) {
+        ecosystem = ParseEcosystem(request.params[1]);
     }
 
     UniValue response(UniValue::VARR);
@@ -414,9 +414,9 @@ UniValue omni_getfeeshare(const UniValue& params, bool fHelp)
 }
 
 // Provides the current values of the fee cache
-UniValue omni_getfeecache(const UniValue& params, bool fHelp)
+UniValue omni_getfeecache(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() > 1)
+    if (request.fHelp || request.params.size() > 1)
         throw runtime_error(
             "omni_getfeecache ( propertyid )\n"
             "\nReturns the amount of fees cached for distribution.\n"
@@ -436,8 +436,8 @@ UniValue omni_getfeecache(const UniValue& params, bool fHelp)
         );
 
     uint32_t propertyId = 0;
-    if (0 < params.size()) {
-        propertyId = ParsePropertyId(params[0]);
+    if (0 < request.params.size()) {
+        propertyId = ParsePropertyId(request.params[0]);
     }
 
     if (propertyId > 0) {
@@ -468,9 +468,9 @@ UniValue omni_getfeecache(const UniValue& params, bool fHelp)
 }
 
 // generate a list of seed blocks based on the data in LevelDB
-UniValue omni_getseedblocks(const UniValue& params, bool fHelp)
+UniValue omni_getseedblocks(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_getseedblocks startblock endblock\n"
             "\nReturns a list of blocks containing Omni transactions for use in seed block filtering.\n"
@@ -488,8 +488,8 @@ UniValue omni_getseedblocks(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getseedblocks", "290000, 300000")
         );
 
-    int startHeight = params[0].get_int();
-    int endHeight = params[1].get_int();
+    int startHeight = request.params[0].get_int();
+    int endHeight = request.params[1].get_int();
 
     RequireHeightInChain(startHeight);
     RequireHeightInChain(endHeight);
@@ -508,9 +508,9 @@ UniValue omni_getseedblocks(const UniValue& params, bool fHelp)
 }
 
 // obtain the payload for a transaction
-UniValue omni_getpayload(const UniValue& params, bool fHelp)
+UniValue omni_getpayload(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 1)
+    if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "omni_getpayload \"txid\"\n"
             "\nGet the payload for an Omni transaction.\n"
@@ -526,7 +526,7 @@ UniValue omni_getpayload(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getpayload", "\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
         );
 
-    uint256 txid = ParseHashV(params[0], "txid");
+    uint256 txid = ParseHashV(request.params[0], "txid");
 
     CTransactionRef tx;
     uint256 blockHash;
@@ -555,9 +555,9 @@ UniValue omni_getpayload(const UniValue& params, bool fHelp)
 }
 
 // determine whether to automatically commit transactions
-UniValue omni_setautocommit(const UniValue& params, bool fHelp)
+UniValue omni_setautocommit(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 1)
+    if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "omni_setautocommit flag\n"
             "\nSets the global flag that determines whether transactions are automatically committed and broadcast.\n"
@@ -572,12 +572,12 @@ UniValue omni_setautocommit(const UniValue& params, bool fHelp)
 
     LOCK(cs_tally);
 
-    autoCommit = params[0].get_bool();
+    autoCommit = request.params[0].get_bool();
     return autoCommit;
 }
 
 // display the tally map & the offer/accept list(s)
-UniValue mscrpc(const UniValue& params, bool fHelp)
+UniValue mscrpc(const JSONRPCRequest &request)
 {
     // TODO zhangzf 
     // pwalletMain   ->   refer rpcwallet
@@ -586,7 +586,7 @@ UniValue mscrpc(const UniValue& params, bool fHelp)
     int extra = 0;
     int extra2 = 0, extra3 = 0;
 
-    if (fHelp || params.size() > 3)
+    if (request.fHelp || request.params.size() > 3)
         throw runtime_error(
             "mscrpc\n"
             "\nReturns the number of blocks in the longest block chain.\n"
@@ -597,9 +597,9 @@ UniValue mscrpc(const UniValue& params, bool fHelp)
             + HelpExampleRpc("mscrpc", "")
         );
 
-    if (0 < params.size()) extra = atoi(params[0].get_str());
-    if (1 < params.size()) extra2 = atoi(params[1].get_str());
-    if (2 < params.size()) extra3 = atoi(params[2].get_str());
+    if (0 < request.params.size()) extra = atoi(request.params[0].get_str());
+    if (1 < request.params.size()) extra2 = atoi(request.params[1].get_str());
+    if (2 < request.params.size()) extra3 = atoi(request.params[2].get_str());
 
     PrintToConsole("%s(extra=%d,extra2=%d,extra3=%d)\n", __FUNCTION__, extra, extra2, extra3);
 
@@ -749,9 +749,9 @@ UniValue mscrpc(const UniValue& params, bool fHelp)
 }
 
 // display an MP balance via RPC
-UniValue omni_getbalance(const UniValue& params, bool fHelp)
+UniValue omni_getbalance(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 2)
+    if (request.fHelp || request.params.size() != 2)
         throw runtime_error(
             "omni_getbalance \"address\" propertyid\n"
             "\nReturns the token balance for a given address and property.\n"
@@ -769,8 +769,8 @@ UniValue omni_getbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getbalance", "\"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P\", 1")
         );
 
-    std::string address = ParseAddress(params[0]);
-    uint32_t propertyId = ParsePropertyId(params[1]);
+    std::string address = ParseAddress(request.params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[1]);
 
     RequireExistingProperty(propertyId);
 
@@ -780,9 +780,9 @@ UniValue omni_getbalance(const UniValue& params, bool fHelp)
     return balanceObj;
 }
 
-UniValue omni_getallbalancesforid(const UniValue& params, bool fHelp)
+UniValue omni_getallbalancesforid(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 1)
+    if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "omni_getallbalancesforid propertyid\n"
             "\nReturns a list of token balances for a given currency or property identifier.\n"
@@ -803,7 +803,7 @@ UniValue omni_getallbalancesforid(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getallbalancesforid", "1")
         );
 
-    uint32_t propertyId = ParsePropertyId(params[0]);
+    uint32_t propertyId = ParsePropertyId(request.params[0]);
 
     RequireExistingProperty(propertyId);
 
@@ -838,9 +838,9 @@ UniValue omni_getallbalancesforid(const UniValue& params, bool fHelp)
     return response;
 }
 
-UniValue omni_getallbalancesforaddress(const UniValue& params, bool fHelp)
+UniValue omni_getallbalancesforaddress(const JSONRPCRequest &request)
 {
-    if (fHelp || params.size() != 1)
+    if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "omni_getallbalancesforaddress \"address\"\n"
             "\nReturns a list of all token balances for a given address.\n"
@@ -862,7 +862,7 @@ UniValue omni_getallbalancesforaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("omni_getallbalancesforaddress", "\"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P\"")
         );
 
-    std::string address = ParseAddress(params[0]);
+    std::string address = ParseAddress(request.params[0]);
 
     UniValue response(UniValue::VARR);
 

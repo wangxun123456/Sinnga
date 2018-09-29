@@ -76,7 +76,9 @@ UniValue omni_funded_send(const JSONRPCRequest& request)
 
     // create the raw transaction
     uint256 retTxid;
-    int result = CreateFundedTransaction(fromAddress, toAddress, feeAddress, payload, retTxid);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = CreateFundedTransaction(pwallet, fromAddress, toAddress, feeAddress, payload, retTxid);
     if (result != 0) {
         throw JSONRPCError(result, error_str(result));
     }
@@ -119,7 +121,9 @@ UniValue omni_funded_sendall(const JSONRPCRequest& request)
 
     // create the raw transaction
     uint256 retTxid;
-    int result = CreateFundedTransaction(fromAddress, toAddress, feeAddress, payload, retTxid);
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+    int result = CreateFundedTransaction(pwallet, fromAddress, toAddress, feeAddress, payload, retTxid);
     if (result != 0) {
         throw JSONRPCError(result, error_str(result));
     }

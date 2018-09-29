@@ -27,6 +27,7 @@ int WalletTxBuilder(
  * and enough coins from a fee source. Change is sent to the fee source!
  */
 int CreateFundedTransaction(
+        CWallet * const pwallet,
         const std::string& senderAddress,
         const std::string& receiverAddress,
         const std::string& feeAddress,

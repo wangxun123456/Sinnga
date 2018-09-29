@@ -26,6 +26,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
+#include "txdb.h"
 
 #include <stdint.h>
 #include <string>
@@ -182,13 +183,14 @@ static void UnlockCoins(
  * and enough coins from a fee source. Change is sent to the fee source!
  */
 int CreateFundedTransaction(
+        CWallet * const pwallet,
         const std::string& senderAddress,
         const std::string& receiverAddress,
         const std::string& feeAddress,
         const std::vector<unsigned char>& payload,
         uint256& retTxid)
 {
-#if 0   // TODO zhangzf
+#if 0 // TODO zhangzf
 #ifdef ENABLE_WALLET
     if (HasWallets()) {
         return MP_ERR_WALLET_ACCESS;
@@ -219,15 +221,15 @@ int CreateFundedTransaction(
     }
 
     bool fSuccess = false;
-    CWalletTx wtxNew;
-    CReserveKey reserveKey(pwalletMain);
+    CTransactionRef wtxNew;
+    CReserveKey reserveKey(pwallet);
     int64_t nFeeRequired = 0;
     std::string strFailReason;
     int nChangePosRet = 0; // add change first
 
     // set change
     CCoinControl coinControl;
-    coinControl.destChange = CBitcoinAddress(feeAddress).Get();
+    coinControl.destChange = DecodeDestination(feeAddress);
     coinControl.fAllowOtherInputs = true;
 
     if (!SelectAllCoins(senderAddress, coinControl)) {
@@ -237,14 +239,14 @@ int CreateFundedTransaction(
     
     // prepare sources for fees
     std::set<CTxDestination> feeSources;
-    feeSources.insert(CBitcoinAddress(feeAddress).Get());
+    feeSources.insert(DecodeDestination(feeAddress));
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwallet->cs_wallet);
 
     std::vector<COutPoint> vLockedCoins;
-    LockUnrelatedCoins(pwalletMain, feeSources, vLockedCoins);
+    LockUnrelatedCoins(pwallet, feeSources, vLockedCoins);
 
-    fSuccess = pwalletMain->CreateTransaction(vecRecipients, wtxNew, reserveKey, nFeeRequired, nChangePosRet, strFailReason, &coinControl, false);
+    fSuccess = pwallet->CreateTransaction(vecRecipients, wtxNew, reserveKey, nFeeRequired, nChangePosRet, strFailReason, coinControl, false);
 
     // to restore the original order of inputs, create a new transaction and add
     // inputs and outputs step by step
@@ -254,29 +256,29 @@ int CreateFundedTransaction(
     coinControl.ListSelected(vSelectedInputs);
 
     // add previously selected coins
-    BOOST_FOREACH(const COutPoint& txIn, vSelectedInputs) {
+    for(const COutPoint& txIn : vSelectedInputs) {
         tx.vin.push_back(CTxIn(txIn));
     }
 
     // add other selected coins
-    BOOST_FOREACH(const CTxIn& txin, wtxNew.vin) {
+    for(const CTxIn& txin : wtxNew->vin) {
         if (!coinControl.IsSelected(txin.prevout)) {
             tx.vin.push_back(txin);
         }
     }
 
     // add outputs
-    BOOST_FOREACH(const CTxOut& txOut, wtxNew.vout) {
+    for(const CTxOut& txOut : wtxNew->vout) {
         tx.vout.push_back(txOut);
     }
 
     // restore original locking state
-    UnlockCoins(pwalletMain, vLockedCoins);
+    UnlockCoins(pwallet, vLockedCoins);
 
     // lock selected outputs for this transaction // TODO: could be removed?
     if (fSuccess) {
-        BOOST_FOREACH(const CTxIn& txIn, tx.vin) {
-            pwalletMain->LockCoin(txIn.prevout);
+        for(const CTxIn& txIn : tx.vin) {
+            pwallet->LockCoin(txIn.prevout);
         }
     }
 
@@ -296,21 +298,21 @@ int CreateFundedTransaction(
         CCoinsViewMemPool viewMempool(&viewChain, mempool);
         view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
 
-        BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+        for(const CTxIn& txin : tx.vin) {
             const uint256& prevHash = txin.prevout.hash;
             CCoins coins;
-            view.AccessCoins(prevHash); // this is certainly allowed to fail
+            view.AccessCoin(COutPoint(prevHash, -1)); // this is certainly allowed to fail
         }
 
         view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
     }
 
     int nHashType = SIGHASH_ALL;
-    const CKeyStore& keystore = *pwalletMain;
+    const CKeyStore& keystore = *pwallet;
 
     for (unsigned int i = 0; i < tx.vin.size(); i++) {
         CTxIn& txin = tx.vin[i];
-        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+        const CCoins* coins = &view.AccessCoin(COutPoint(txin.prevout.hash, -1));
         if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
             PrintToLog("%s: ERROR: wallet transaction signing failed: input not found or already spent\n", __func__);
             continue;
@@ -344,5 +346,5 @@ int CreateFundedTransaction(
     return MP_ERR_WALLET_ACCESS;
 #endif
 #endif
-    return 0;   // zhangzf delete
+    return 0; // del
 }
