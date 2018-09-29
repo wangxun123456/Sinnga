@@ -19,6 +19,7 @@
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
+static const bool DEFAULT_LOGFIELD      = false;
 extern const char * const DEFAULT_DEBUGLOGFILE;
 
 extern bool fLogIPs;
@@ -81,6 +82,7 @@ namespace BCLog {
 
         bool m_log_timestamps = DEFAULT_LOGTIMESTAMPS;
         bool m_log_time_micros = DEFAULT_LOGTIMEMICROS;
+		bool m_log_field = DEFAULT_LOGFIELD;
 
         fs::path m_file_path;
         std::atomic<bool> m_reopen_file{false};
@@ -152,7 +154,9 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
             /* Original format string will have newline so don't add one here */ \
             _log_msg_ = "Error \"" + std::string(fmterr.what()) + "\" while formatting log message: " + FormatStringFromLogArgs(__VA_ARGS__); \
         } \
-        g_logger->LogPrintStr("[" + std::string(__FILE__) + "(" + std::string(__func__) + "):" + std::to_string(__LINE__) + "] " + _log_msg_); \
+		if(g_logger->m_log_field) \
+		   _log_msg_ = "[" + std::string(__FILE__) + "(" + std::string(__func__) + "):" + std::to_string(__LINE__) + "] " + _log_msg_; \
+        g_logger->LogPrintStr(_log_msg_); \
     } \
 } while(0)
 
