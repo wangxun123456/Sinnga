@@ -226,7 +226,8 @@ public:
      *  See also comments around ArgsManager::ArgsManager() below. */
     static inline bool UseDefaultSection(const ArgsManager& am, const std::string& arg)
     {
-        return (am.m_network == CBaseChainParams::MAIN || am.m_network_only_args.count(arg) == 0);
+        // return (am.m_network == CBaseChainParams::MAIN || am.m_network_only_args.count(arg) == 0);
+		return (am.m_network == CBaseChainParams::SINNGA || am.m_network_only_args.count(arg) == 0);
     }
 
     /** Convert regular argument into the network-specific setting */
@@ -384,7 +385,8 @@ void ArgsManager::WarnForSectionOnlyArgs()
     if (m_network.empty()) return;
 
     // if it's okay to use the default section for this network, don't worry
-    if (m_network == CBaseChainParams::MAIN) return;
+    // if (m_network == CBaseChainParams::MAIN) return;
+	if (m_network == CBaseChainParams::SINNGA) return;
 
     for (const auto& arg : m_network_only_args) {
         std::pair<bool, std::string> found_result;
@@ -961,20 +963,36 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
 
 std::string ArgsManager::GetChainName() const
 {
+	bool fSinnga = ArgsManagerHelper::GetNetBoolArg(*this, "-sinnga");
     bool fRegTest = ArgsManagerHelper::GetNetBoolArg(*this, "-regtest");
     bool fTestNet = ArgsManagerHelper::GetNetBoolArg(*this, "-testnet");
-	bool fMyNewNet = ArgsManagerHelper::GetNetBoolArg(*this, "-mynewnet");
-	
-    if (fTestNet && fRegTest && fMyNewNet)
+
+    if (fTestNet && fRegTest) {
         throw std::runtime_error("Invalid combination of -regtest and -testnet.");
-    if (fRegTest)
-        return CBaseChainParams::REGTEST;
-    if (fTestNet)
-        return CBaseChainParams::TESTNET;
-	if (fMyNewNet)
-        return CBaseChainParams::MYNEWNET;
+	}
+
+	if (fTestNet && fSinnga) {
+        throw std::runtime_error("Invalid combination of -sinnga and -testnet.");
+	}
+
+	if (fSinnga && fRegTest) {
+        throw std::runtime_error("Invalid combination of -regtest and -sinnga.");
+	}
 	
-    return CBaseChainParams::MAIN;
+    if (fRegTest) {
+        return CBaseChainParams::REGTEST;
+	}
+	
+    if (fTestNet) {
+        return CBaseChainParams::TESTNET;
+	}
+	
+	if (fSinnga) {
+        return CBaseChainParams::SINNGA;
+	}
+	
+    // return CBaseChainParams::MAIN;
+	return CBaseChainParams::SINNGA;
 }
 
 #ifndef WIN32

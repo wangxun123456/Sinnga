@@ -209,10 +209,12 @@ void PaymentServer::ipcParseCommandLine(interfaces::Node& node, int argc, char* 
             SendCoinsRecipient r;
             if (GUIUtil::parseBitcoinURI(arg, &r) && !r.address.isEmpty())
             {
-                auto tempChainParams = CreateChainParams(CBaseChainParams::MAIN);
+				// auto tempChainParams = CreateChainParams(CBaseChainParams::MAIN);
+                auto tempChainParams = CreateChainParams(CBaseChainParams::SINNGA);
 
                 if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
-                    node.selectParams(CBaseChainParams::MAIN);
+					// node.selectParams(CBaseChainParams::MAIN);
+                    node.selectParams(CBaseChainParams::SINNGA);
                 } else {
                     tempChainParams = CreateChainParams(CBaseChainParams::TESTNET);
                     if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
@@ -228,9 +230,13 @@ void PaymentServer::ipcParseCommandLine(interfaces::Node& node, int argc, char* 
             PaymentRequestPlus request;
             if (readPaymentRequestFromFile(arg, request))
             {
-                if (request.getDetails().network() == "main")
+                // if (request.getDetails().network() == "main")
+                // {
+                //     node.selectParams(CBaseChainParams::MAIN);
+                // }
+				if (request.getDetails().network() == "sinnga")
                 {
-                    node.selectParams(CBaseChainParams::MAIN);
+                    node.selectParams(CBaseChainParams::SINNGA);
                 }
                 else if (request.getDetails().network() == "test")
                 {

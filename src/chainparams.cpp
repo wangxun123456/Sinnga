@@ -356,10 +356,10 @@ public:
     }
 };
 
-class CMyNewNetParams : public CChainParams {
+class CSinngaParams : public CChainParams {
 public:
-    CMyNewNetParams() {
-        strNetworkID = "mynewnet";
+    CSinngaParams() {
+        strNetworkID = "sinnga";
         consensus.nSubsidyHalvingInterval = 210000;
         consensus.BIP16Exception = uint256S("0x00000000000002dc756eebf4f49723ed8d30cc28a5f108eb94b1ba88ac4f9c22");
         consensus.BIP34Height = 227931;
@@ -408,7 +408,7 @@ public:
         // genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
 
 		/********** miner genesis block***************/
-		// fprintf(stderr, "*********** recalculating params for MyNewNet ***********\n");
+		// fprintf(stderr, "*********** recalculating params for sinnga ***********\n");
 		// const char* pszTimestamp = "The Underwater Engineering Feat of the 19th Century: The Transatlantic Cable";
 		// const CScript genesisOutputScript = CScript() << ParseHex("043489b47791f4f4d28286703b0fde91e2057db4c1db6d6062d8ba4ef395113f3c9d6ab50d84d3a4132fdfc4c7239187cacf4bede74f2f49d8cdb118e990f28562") << OP_CHECKSIG;
 		// uint32_t nNonce = 0;
@@ -447,7 +447,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0xcf, 0xd7, 0x34, 0x8a};
         base58Prefixes[EXT_SECRET_KEY] = {0xcf, 0xd7, 0x3b, 0x7f};
 
-        bech32_hrp = "mnbc";
+        bech32_hrp = "spc";
 
         vFixedSeeds.clear();
 
@@ -488,8 +488,8 @@ std::unique_ptr<CChainParams> CreateChainParams(const std::string& chain)
         return std::unique_ptr<CChainParams>(new CTestNetParams());
     else if (chain == CBaseChainParams::REGTEST)
         return std::unique_ptr<CChainParams>(new CRegTestParams());
-	else if (chain == CBaseChainParams::MYNEWNET)
-        return std::unique_ptr<CChainParams>(new CMyNewNetParams());
+	else if (chain == CBaseChainParams::SINNGA)
+        return std::unique_ptr<CChainParams>(new CSinngaParams());
     throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
 }
 

@@ -485,7 +485,8 @@ BOOST_AUTO_TEST_CASE(util_ReadConfigStream)
     test_args.SetNetworkOnlyArg("-ccc");
     test_args.SetNetworkOnlyArg("-h");
 
-    test_args.SelectConfigNetwork(CBaseChainParams::MAIN);
+	// test_args.SelectConfigNetwork(CBaseChainParams::MAIN);
+    test_args.SelectConfigNetwork(CBaseChainParams::SINNGA);
     BOOST_CHECK(test_args.GetArg("-d", "xxx") == "e");
     BOOST_CHECK(test_args.GetArgs("-ccc").size() == 2);
     BOOST_CHECK(test_args.GetArg("-h", "xxx") == "0");
@@ -544,8 +545,8 @@ BOOST_AUTO_TEST_CASE(util_GetArg)
 BOOST_AUTO_TEST_CASE(util_GetChainName)
 {
     TestArgsManager test_args;
-    const char* avail_args[] = {"-testnet", "-regtest"};
-    test_args.SetupArgs(2, avail_args);
+    const char* avail_args[] = {"-main", "-testnet", "-regtest", "sinnga"};
+    test_args.SetupArgs(4, avail_args);
 
     const char* argv_testnet[] = {"cmd", "-testnet"};
     const char* argv_regtest[] = {"cmd", "-regtest"};
@@ -558,7 +559,7 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     std::string error;
 
     test_args.ParseParameters(0, (char**)argv_testnet, error);
-    BOOST_CHECK_EQUAL(test_args.GetChainName(), "main");
+    BOOST_CHECK_EQUAL(test_args.GetChainName(), "sinnga");
 
     test_args.ParseParameters(2, (char**)argv_testnet, error);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
@@ -615,6 +616,12 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     test_args.ParseParameters(3, (char**)argv_both, error);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+	// add for sinnga test
+	const char* argv_sinnga[] = {"cmd", "-sinnga"};
+
+	test_args.ParseParameters(2, (char**)argv_sinnga, error);
+	BOOST_CHECK_EQUAL(test_args.GetChainName(), "sinnga");
 }
 
 BOOST_AUTO_TEST_CASE(util_FormatMoney)

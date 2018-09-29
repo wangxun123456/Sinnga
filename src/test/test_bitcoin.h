@@ -42,8 +42,9 @@ static inline bool InsecureRandBool() { return insecure_rand_ctx.randbool(); }
  */
 struct BasicTestingSetup {
     ECCVerifyHandle globalVerifyHandle;
-
-    explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
+	
+	/* explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::MAIN); */
+    explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::SINNGA);
     ~BasicTestingSetup();
 
     fs::path SetDataDir(const std::string& name);
@@ -69,7 +70,8 @@ struct TestingSetup: public BasicTestingSetup {
     CScheduler scheduler;
     std::unique_ptr<PeerLogicValidation> peerLogic;
 
-    explicit TestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
+	/* explicit TestingSetup(const std::string& chainName = CBaseChainParams::MAIN); */
+    explicit TestingSetup(const std::string& chainName = CBaseChainParams::SINNGA);
     ~TestingSetup();
 };
 

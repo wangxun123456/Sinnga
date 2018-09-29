@@ -14,14 +14,14 @@
 const std::string CBaseChainParams::MAIN = "main";
 const std::string CBaseChainParams::TESTNET = "test";
 const std::string CBaseChainParams::REGTEST = "regtest";
-const std::string CBaseChainParams::MYNEWNET = "mynewnet";
+const std::string CBaseChainParams::SINNGA = "sinnga";
 
 void SetupChainParamsBaseOptions()
 {
     gArgs.AddArg("-regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
                                    "This is intended for regression testing tools and app development.", true, OptionsCategory::CHAINPARAMS);
     gArgs.AddArg("-testnet", "Use the test chain", false, OptionsCategory::CHAINPARAMS);
-	gArgs.AddArg("-mynewnet", "Use the new chain", false, OptionsCategory::CHAINPARAMS);
+	gArgs.AddArg("-sinnga", "Sinnga public chain", false, OptionsCategory::CHAINPARAMS);
 }
 
 static std::unique_ptr<CBaseChainParams> globalChainBaseParams;
@@ -40,8 +40,8 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string& chain
         return MakeUnique<CBaseChainParams>("testnet3", 18332);
     else if (chain == CBaseChainParams::REGTEST)
         return MakeUnique<CBaseChainParams>("regtest", 18443);
-    else if (chain == CBaseChainParams::MYNEWNET)
-		return MakeUnique<CBaseChainParams>("mynewnet", 7387);
+    else if (chain == CBaseChainParams::SINNGA)
+		return MakeUnique<CBaseChainParams>("sinnga.io", 7387);
 	else
         throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
 }

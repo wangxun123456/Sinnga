@@ -31,7 +31,8 @@ static const int CONTINUE_EXECUTION=-1;
 
 static void SetupCliArgs()
 {
-    const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
+    // const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
+	const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::SINNGA);
     const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
 
     gArgs.AddArg("-?", "This help message", false, OptionsCategory::OPTIONS);

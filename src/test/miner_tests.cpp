@@ -205,9 +205,11 @@ static void TestPackageSelection(const CChainParams& chainparams, const CScript&
 BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 {
     // Note that by default, these tests run with size accounting enabled.
-    const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+    // const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+	const auto chainParams = CreateChainParams(CBaseChainParams::SINNGA);
     const CChainParams& chainparams = *chainParams;
-    CScript scriptPubKey = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f") << OP_CHECKSIG;
+    // CScript scriptPubKey = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f") << OP_CHECKSIG;
+	CScript scriptPubKey = CScript() << ParseHex("043489b47791f4f4d28286703b0fde91e2057db4c1db6d6062d8ba4ef395113f3c9d6ab50d84d3a4132fdfc4c7239187cacf4bede74f2f49d8cdb118e990f28562") << OP_CHECKSIG;
     std::unique_ptr<CBlockTemplate> pblocktemplate;
     CMutableTransaction tx;
     CScript script;
