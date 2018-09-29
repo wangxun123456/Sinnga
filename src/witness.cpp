@@ -8,10 +8,31 @@
 
 #define PRODUCE_NODE_COUNT 6
 
+int64_t block_interval=10;//10s
+int64_t new_round_begin_time=0;
+bool round_generated=false;
+uint160 local_address;
+std::vector<uint160> witness_keys;
+std::shared_ptr<CDynamicWitnessProperty> dynGlobalPropperty(new CDynamicWitnessProperty());
 
-int8_t GetSlotAtTime(int64_t){
+namespace WitnessSchedule{
+//second
+int64_t GetSlotTime(int8_t slot_num)
+{
+    if( slot_num == 0 )
+       return 0;
+    auto interval = block_interval;
+
+
+}
+
+int8_t GetSlotByTime(int64_t){
     return 0;
 }
+
+
+}
+
 
 void NewChainBanner()
 {
@@ -24,7 +45,7 @@ void NewChainBanner()
       "*                              *\n"
       "********************************\n"
       "\n";
-   if( GetSlotAtTime(GetTime()) > 200 )
+   if( WitnessSchedule::GetSlotByTime(GetTime()) > 200 )
    {
       std::cerr << "Your genesis seems to have an old timestamp\n"
          "Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n"
@@ -46,13 +67,6 @@ enum block_production_condition_enum
     exception_producing_block = 8
 };
 
-
-
-int64_t block_interval=10;//10s
-int64_t new_round_begin_time=0;
-bool round_generated=false;
-uint160 local_address;
-std::vector<uint160> witness_keys;
 
 bool GreaterSort(uint160 a,uint160 b){
     return a < b;
@@ -103,7 +117,7 @@ bool GetLocalKeyID(CWallet* const pwallet)
         }
         CKey vchSecret;
         if (!pwallet->GetKey(keyid, vchSecret)) {
-            continue;;
+            continue;
         }
         local_address=u160addr;
         find = true;

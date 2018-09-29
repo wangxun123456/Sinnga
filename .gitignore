@@ -4,7 +4,11 @@
 1850.includes
 1850.creator.user
 *.tar.gz
-
+Sinnga.config
+Sinnga.creator
+Sinnga.files
+Sinnga.includes
+Sinnga.creator.user
 *.exe
 src/bitcoin
 src/bitcoind
