@@ -961,7 +961,6 @@ void PeerLogicValidation::RelayConfirm(const std::shared_ptr<const CBlockConfirm
     {
         if(!NodeHaveConfirm(pnode->GetId(),*confirm))
         {
-            AddConfirmToNode(*confirm,pnode);
             connman->PushMessage(pnode, msgMaker.Make(NetMsgType::BLOCKCONFIRM, *confirm));
         }
     });

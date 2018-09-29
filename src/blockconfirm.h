@@ -22,15 +22,12 @@ class CBlockConfirm
 {
 public:
     CBlockConfirm(){m_hashBlock.SetNull();}
-    CBlockConfirm(const uint256 &hashBlockIn,const WitnessId &nodeIdIn,const uint32_t &heightIn):
+    CBlockConfirm(const uint256 &hashBlockIn,const WitnessId &nodeIdIn,const uint32_t &heightIn,bool confirmIn):
         m_hashBlock(hashBlockIn),
         m_witnessId(nodeIdIn),
-        m_height(heightIn){}
-    ~CBlockConfirm()
-    {
-//        HLOG("in ~CBlockConfirm");
-//        HLOG("confirm = %s",ToString().c_str());
-    }
+        m_height(heightIn),
+        m_confirm(confirmIn){}
+
     void SetNull(){m_hashBlock.SetNull();}
     bool IsNull() const {return m_hashBlock.IsNull();}
     uint256 Hash() const {return m_hashBlock;}
@@ -39,6 +36,11 @@ public:
     void SetId(const WitnessId & id){m_witnessId = id;}
     int Height() const {return m_height;}
     void SetHeight(uint32_t height){m_height = height;}
+    bool Confirm() const {return m_confirm;}
+    void SetConfirm(bool confirm) {m_confirm = confirm;}
+
+
+    bool IsValid() const {return true;}
 
     ADD_SERIALIZE_METHODS;
     template <typename Stream, typename Operation>
@@ -47,6 +49,7 @@ public:
         READWRITE(m_hashBlock);
         READWRITE(m_witnessId);
         READWRITE(m_height);
+        READWRITE(m_confirm);
     }
     friend bool operator <(const CBlockConfirm & a, const CBlockConfirm& b)
     {
@@ -60,6 +63,7 @@ private:
     uint256 m_hashBlock;
     WitnessId  m_witnessId;
     uint32_t m_height;
+    bool m_confirm;
 };
 
 class CNode;
