@@ -680,7 +680,6 @@ UniValue omni_createpayload_unfreeze(const JSONRPCRequest &request)
 
 static const CRPCCommand commands[] =
 { //  category                         name                                      actor (function)                         okSafeMode
-    // TODO zhangzf
     // param
   //  -------------------------------- ----------------------------------------- ---------------------------------------- ----------
     { "omni layer (payload creation)", "omni_createpayload_simplesend",          &omni_createpayload_simplesend,          {} },
