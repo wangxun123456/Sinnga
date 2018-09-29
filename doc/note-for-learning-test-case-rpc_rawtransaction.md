@@ -24,4 +24,35 @@
   
   that makes us to be easy to distinguish which pid which bitciond node has, when test case call RPC createrawtransaction on node 0, we need attach to pid 12476 for debugging c++ source code.
 
-4.   
+4. Check that createrawtransaction accepts an array and object as outputs
+        
+        self.log.info('Check that createrawtransaction accepts an array and object as outputs')
+        tx = CTransaction()
+        # One output
+        tx.deserialize(BytesIO(hex_str_to_bytes(self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs={address: 99}))))
+        assert_equal(len(tx.vout), 1)
+        assert_equal(
+            bytes_to_hex_str(tx.serialize()),
+            self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=[{address: 99}]),
+        )
+        # Two outputs
+        tx.deserialize(BytesIO(hex_str_to_bytes(self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=OrderedDict([(address, 99), (address2, 99)])))))
+        assert_equal(len(tx.vout), 2)
+        assert_equal(
+            bytes_to_hex_str(tx.serialize()),
+            self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=[{address: 99}, {address2: 99}]),
+        )
+        # Two data outputs
+        tx.deserialize(BytesIO(hex_str_to_bytes(self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=multidict([('data', '99'), ('data', '99')])))))
+        assert_equal(len(tx.vout), 2)
+        assert_equal(
+            bytes_to_hex_str(tx.serialize()),
+            self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=[{'data': '99'}, {'data': '99'}]),
+        )
+        # Multiple mixed outputs
+        tx.deserialize(BytesIO(hex_str_to_bytes(self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=multidict([(address, 99), ('data', '99'), ('data', '99')])))))
+        assert_equal(len(tx.vout), 3)
+        assert_equal(
+            bytes_to_hex_str(tx.serialize()),
+            self.nodes[2].createrawtransaction(inputs=[{'txid': txid, 'vout': 9}], outputs=[{address: 99}, {'data': '99'}, {'data': '99'}]),
+        )
