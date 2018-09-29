@@ -24,7 +24,7 @@
   
   that makes us to be easy to distinguish which pid which bitciond node has, when test case call RPC createrawtransaction on node 0, we need attach to pid 12476 for debugging c++ source code.
 
-4. Check that createrawtransaction accepts an array and object as outputs
+4.Check that createrawtransaction accepts an array and object as outputs
         
         self.log.info('Check that createrawtransaction accepts an array and object as outputs')
         tx = CTransaction()
