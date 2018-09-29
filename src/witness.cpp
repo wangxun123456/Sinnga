@@ -22,7 +22,7 @@ int64_t GetSlotTime(int8_t slot_num)
     if( slot_num == 0 )
        return 0;
     auto interval = block_interval;
-
+    const CDynamicWitnessProperty& dpo =*dynGlobalPropperty;
 
 }
 
