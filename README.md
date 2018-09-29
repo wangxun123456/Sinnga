@@ -1,4 +1,4 @@
-Sinnga Bitcoin Core + OnmiLayer integration/staging tree
+Sinnga Bitcoin Core + OmniLayer integration/staging tree
 =====================================
 
 Sinnga will maintain its code base with the latest official release of bitcoin_core. Currently, it has been developing with the coming release of bitcoin_core 0.17. It will be online with the same version of bitcoin_core on Bitcoin Nodes.
